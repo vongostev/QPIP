@@ -22,6 +22,10 @@ import logging
 import datetime
 import copy
 
+if not os.path.exists('./img/'):
+    os.makedirs('./img/')
+if not os.path.exists('./log/'):
+    os.makedirs('./log/')
 
 FLOG = True
 logger = logging.getLogger('test')
@@ -49,11 +53,6 @@ pyomolog.setLevel(logging.ERROR)
 info = logger.info
 
 dictzip = cmp(dict, zip)
-
-
-def make_model_pn(P, N, N0):
-
-    return 
 
 
 def make_qmodel(P, mtype, n_cells, qe=0, M=0, N0=0, ERR=0, **kwargs):
