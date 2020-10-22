@@ -12,14 +12,14 @@ QPIP module consists of some parts:
 
 # How to use qpip.epscon?
 Import necessary modules:
-```
+```python
 import numpy as np
 from qpip.stat import ppoisson
 from qpip import normalize, P2Q, fidelity
 from qpip.epscon import InvPBaseModel, epsopt
 ```
 Make photocounting statistics for the sample of finite size in presence of noise
-```
+```python
 N = 25 # length of photon-number statistics
 M = 25 # length of photocounting statistics
 N0 = int(1E6) # number of photocounting events
@@ -34,7 +34,7 @@ QN = np.abs(QN*(1 + np.random.uniform(-ERR, ERR, size=len(QN))))
 QN = normalize(QN) # photocounting statistics for the sample of N0 size
 ```
 Find optimal estimation
-```
+```python
 invpmodel = InvPBaseModel(QN, qe, N) # make optimization model
 res = epsopt(invpmodel, eps_tol=1e-5) # optimize it!
 print(res) # print result (OptimizeResult)
