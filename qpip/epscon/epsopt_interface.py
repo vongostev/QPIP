@@ -37,7 +37,7 @@ def epsopt(invpmodel, solver=None,
     if solver is None:
         solver = SolverFactory('ipopt', solver_io="nl")
 
-    negentropy_bounds = [[-np.log(len(invpmodel.PSET) + 1)], [0]]
+    negentropy_bounds = [[-np.log(len(invpmodel.PSET))], [0]]
 
     y_vars = ['rel_entropy', 'negentropy']
     x_var = 'P'
@@ -52,7 +52,6 @@ def epsopt(invpmodel, solver=None,
     info('Optimization ended in %d iterations with eps_tol %e' %
          (res.nit, eps_tol))
     info(str(res.status))
-    print(res)
     
     if plot and res.nit > 1:
         for i in lrange(y_vars):

@@ -299,7 +299,9 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
         'maxiter': 'Maximum number of iterations has been '
                    'exceeded.',
         'badloop': 'Iterations fall to cycle due model errors',
-        'nosolve': 'Problem is infeasible in given constraints'
+        'nosolve': 'Problem is infeasible in given constraints',
+        'ftolsuccess': 'Optimization terminated successfully with finite tolerance '
+                       'result may be inaccurate.'
         }
 
     while len(rectangle_list) != 0:
@@ -309,8 +311,8 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
             delta_norm = sum((x - y) ** 2 for x, y in
                     zip(nondom_y[-1][1:], nondom_y[-2][1:])) ** 0.5
             if delta_norm < eps_tol:
-                for n, e in enumerate(epsilon):
-                    epsilon[n] = e - 2 * eps_tol
+                status = 'ftolsuccess'
+                break
 
         if badloop_flag > 2:
             for n, e in enumerate(epsilon):
