@@ -29,7 +29,7 @@ error = logger.error
 
 
 def pyomo_values(var):
-    return [value(e) for e in var.values()]
+    return np.array([value(e) for e in var.values()])
 
 
 def greater(l1, l2):
@@ -70,7 +70,6 @@ def P1(epsilon, model, y_vars):
 
 def Q1(epsilon, z_optimal, model, y_vars):
     """
-    
 
     Parameters
     ----------
@@ -364,7 +363,7 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
         'nit': len(nondom_y),
         'model': model,
         'x': pyomo_values(getattr(model, x_var)),
-        'y': dict(zip(y_vars, nondom_y[-1])),
+        'y': dict(zip(y_vars, nondom_y[-1] if len(nondom_y) > 0 else np.zeros_like(y_vars))),
         'ndx': np.array(nondom_x) if save_all_nondom_x else [],
         'ndy': np.array(nondom_y) if save_all_nondom_y else []
     }

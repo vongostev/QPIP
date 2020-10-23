@@ -12,6 +12,7 @@ import functools
 import numpy as np
 from scipy.special import factorial, binom
 
+DPREC = np.float128
 
 def compose(*functions):
     def pack(x): return x if type(x) is tuple else (x,)
@@ -25,7 +26,7 @@ def lrange(iterable):
 
 
 def fact(n):
-    return factorial(n, exact=True)
+    return DPREC(factorial(n, exact=True))
 
 
 def positive_index(i, data):
@@ -55,6 +56,9 @@ def mean(p):
 def g2(p):
     m = mean(p)
     s = moment(p, 2)
+    if m == 0:
+        m = 1
+        print('Uncorrect g2. Zero mean change to 1')
     return (s - m) / m ** 2
 
 

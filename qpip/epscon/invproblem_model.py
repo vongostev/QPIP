@@ -35,7 +35,7 @@ def pyomo_values(var):
         Array of values stored in variable.
 
     """
-    
+
     return np.array([value(e) for e in var.values()])
 
 
@@ -56,8 +56,8 @@ def c_sum_qest(model):
 
 def c_qbounds(model, m):
     """
-    Constraint rule for upper bound for absolute difference: 
-        |Q[m]-QEST[m]| < exp_precision*QEST[m].    
+    Constraint rule for upper bound for absolute difference:
+        |Q[m]-QEST[m]| < exp_precision*QEST[m].
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def c_qbounds(model, m):
         photocounting number.
 
     """
-    
+
     return (0, abs(model.QEST[m] - model.Q[m]),
             model.exp_precision * model.Q[m])
 
@@ -75,7 +75,7 @@ def c_moments(model, k):
     """
     Constraint rule for difference QEST initial moment of order k
     and the same moment of Q.
-    This difference must be less than 1%    
+    This difference must be less than 1%
 
     Parameters
     ----------

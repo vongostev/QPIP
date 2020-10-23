@@ -55,7 +55,7 @@ info = logger.info
 dictzip = cmp(dict, zip)
 
 
-def make_qmodel(P, mtype, n_cells, qe=0, M=0, N0=0, ERR=0, **kwargs):
+def make_qmodel(P, mtype, n_cells, qe=1, M=0, N0=0, ERR=0, **kwargs):
     Q = P2Q(P, qe, M, mtype, n_cells)
     QND = np.random.choice(range(M), size=N0, p=Q.astype(float))
     QN = np.histogram(QND, bins=range(M + 1), density=True)[0]

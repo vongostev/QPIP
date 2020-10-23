@@ -42,5 +42,5 @@ print(fidelity(res.x, P))
 ```
 
 # Requirements
-- numpy, scipy, pyomo, qutip (for qpip.stat)
+- numpy, scipy, pyomo, qutip (for qpip.stat), matplotlib
 - numpy.float128

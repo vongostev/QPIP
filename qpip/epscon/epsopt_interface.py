@@ -48,11 +48,11 @@ def epsopt(invpmodel, solver=None,
                   save_all_nondom_x=save_all_nondom_x,
                   save_all_nondom_y=save_all_nondom_y,
                   disp=disp)
-    
+
     info('Optimization ended in %d iterations with eps_tol %e' %
          (res.nit, eps_tol))
     info(str(res.status))
-    
+
     if plot and res.nit > 1:
         for i in lrange(y_vars):
             plt.plot([e[i] for e in res.ndy], label=y_vars[i])

@@ -1,4 +1,3 @@
-from .detection_core import (P2Q, Q2P, 
-                             normalize, fidelity, compose,
-                             lrange, mean, g2)
+from .detection_core import P2Q, Q2P
 from .epscon import *
+from ._numpy_core import *
