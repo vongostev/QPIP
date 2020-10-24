@@ -152,7 +152,7 @@ def e_pest(model, n):
 class InvPBaseModel(ConcreteModel):
     """
     Pyomo model for inverse photocounting problem
-    It is made for solve quadratic bi-criterium problem
+    It is made for solve bi-criterium problem
     to find solution with minimum disprepancy and negentropy
 
     __init__ arguments

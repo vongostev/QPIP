@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 from qpip import compose as cmp
 from qpip import lrange, normalize, mean, g2, fidelity
 from qpip import P2Q, Q2P
-from qpip.epscon import epsopt, InvPBaseModel
+from qpip.epscon import invpopt, InvPBaseModel
 from qpip.stat import *
 
 import numpy as np
@@ -66,7 +66,7 @@ def make_qmodel(P, mtype, n_cells, qe=1, M=0, N0=0, ERR=0, **kwargs):
 
 def execute_test(QN, Q, P, qe, N, mtype, n_cells, eps_tol):
     invpmodel = InvPBaseModel(QN, qe, N, mtype=mtype, n_cells=n_cells)
-    res = epsopt(invpmodel, eps_tol=eps_tol)
+    res = invpopt(invpmodel, eps_tol=eps_tol)
     PREC, QREC = res.x, P2Q(res.x, qe, len(Q))
     F_pn = fidelity(PREC, P)
     F_pn_rn = fidelity(PREC, P)

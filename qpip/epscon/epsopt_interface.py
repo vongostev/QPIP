@@ -18,21 +18,12 @@ import numpy as np
 from pyomo.opt import SolverFactory
 import matplotlib.pyplot as plt
 
-from ._eps_optimization import iterate
-from .._numpy_core import lrange
-
-import logging
-logger = logging.getLogger('inverse_eps')
-logger.setLevel(logging.INFO)
-if (logger.hasHandlers()):
-    logger.handlers.clear()
-info = logger.info
-error = logger.error
+from ._eps_optimization import iterate, info
 
 
-def epsopt(invpmodel, solver=None,
-           eps_tol=0, save_all_nondom_x=False,
-           save_all_nondom_y=False, disp=False, plot=False):
+def invpopt(invpmodel, solver=None,
+            eps_tol=0, save_all_nondom_x=False,
+            save_all_nondom_y=False, disp=False, plot=False):
 
     if solver is None:
         solver = SolverFactory('ipopt', solver_io="nl")
@@ -54,14 +45,9 @@ def epsopt(invpmodel, solver=None,
     info(str(res.status))
 
     if plot and res.nit > 1:
-        for i in lrange(y_vars):
-            plt.plot([e[i] for e in res.ndy], label=y_vars[i])
-            plt.legend(frameon=False)
-            plt.show()
-        if len(y_vars) == 2:
-            plt.plot([e[1] for e in res.ndy], [e[0] for e in res.ndy])
-            plt.ylabel(y_vars[1])
-            plt.xlabel(y_vars[0])
-            plt.show()
+        plt.plot([e[1] for e in res.ndy], [e[0] for e in res.ndy])
+        plt.ylabel(y_vars[1])
+        plt.xlabel(y_vars[0])
+        plt.show()
 
     return res
