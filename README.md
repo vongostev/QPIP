@@ -16,12 +16,12 @@ Import necessary modules:
 import numpy as np
 from qpip.stat import ppoisson
 from qpip import normalize, P2Q, fidelity
-from qpip.epscon import InvPBaseModel, epsopt
+from qpip.epscon import InvPBaseModel, invpopt
 ```
 Make photocounting statistics for the sample of finite size in presence of noise
 ```python
-N = 25 # length of photon-number statistics
-M = 25 # length of photocounting statistics
+N = 25 # length of the photon-number statistics
+M = 25 # length of the photocounting statistics
 N0 = int(1E6) # number of photocounting events
 qe = 0.3 # quantum efficiency
 ERR = 1e-2 # relative error for photocounting statistics
@@ -36,9 +36,39 @@ QN = normalize(QN) # photocounting statistics for the sample of N0 size
 Find optimal estimation
 ```python
 invpmodel = InvPBaseModel(QN, qe, N) # make optimization model
-res = epsopt(invpmodel, eps_tol=1e-5) # optimize it!
+res = invpopt(invpmodel, eps_tol=1e-5) # optimize it!
 print(res) # print result (OptimizeResult)
 print(fidelity(res.x, P))
+```
+
+# How to use qpip.denoise?
+Import necessary modules:
+```python
+import numpy as np
+from qpip.stat import ppoisson, pthermal
+from qpip import normalize, P2Q, fidelity, p_convolve
+from qpip.denoise import DenoisePBaseModel, denoiseopt
+```
+Make noised statistics for the sample of finite size in presence of noise
+```python
+N = 25 # length of the laser distribution
+M = 10 # length of the noise distribution
+N0 = int(1E6) # number of events
+ERR = 1e-2 # relative error for photocounting statistics
+
+noise = pthermal(1, M)
+P = normalize(p_convolve(ppoisson(6, N), noise)) # noised distribution
+PND = np.random.choice(range(N), size=N0, p=P.astype(float)) # random events
+PN = np.histogram(PND, bins=range(N + 1), density=True)[0] 
+PN = np.abs(PN*(1 + np.random.uniform(-ERR, ERR, size=N)))
+PN = normalize(PN) # statistics for the sample of N0 size
+```
+Find optimal estimation
+```python
+dnpmodel = DenoisePBaseModel(PN, M) # make optimization model
+res = denoiseopt(dnpmodel, eps_tol=1e-5, mean_ubound=2) # optimize it!
+print(res) # print result (OptimizeResult)
+print(fidelity(res.x, noise))
 ```
 
 # Requirements
