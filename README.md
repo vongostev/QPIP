@@ -9,6 +9,10 @@ QPIP module consists of some parts:
     qpip.epscon can be used for recover any photon-number statistics with any quantum efficiency of detector.
     One can use both of binomial and subbinomial models of photodetection.
 - stat: Some examples of photon-number and photocounting statistics corresponding to quantum light fields
+- denoise:
+    Pyomo model and epsilon-constrainted algorithm to recover noise statistics of laser source or signal statistics against the background of coherent noise (for example in collinear SPDC analysing).
+- sipm:
+    Instruments to make photocounting statistics from histograms and raw oscillograms (maked by lecroy oscilloscope).
 
 # How to use qpip.epscon?
 Import necessary modules:
@@ -74,3 +78,4 @@ print(fidelity(res.x, noise))
 # Requirements
 - numpy, scipy, pyomo, qutip (for qpip.stat), matplotlib
 - numpy.float128
+- for qpip.sipm: lecroyparcer, joblib, dataclasses
