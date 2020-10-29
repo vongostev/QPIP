@@ -22,7 +22,7 @@ def compose(*functions):
 
 
 def lrange(iterable):
-    return compose(range, len)(iterable)
+    return compose(np.arange, len)(iterable)
 
 
 def fact(n):
@@ -68,6 +68,10 @@ def fmoment(p, N):
 
 def bmoment(p, N):
     return sum(binom(i, N) * p[i] for i in lrange(p) if i >= N)
+
+
+def cmoment(p, N):
+    return sum((i ** N - moment(p, 1)) * p[i] for i in lrange(p))
 
 
 def normalize(p):

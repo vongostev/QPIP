@@ -6,10 +6,12 @@ Created on Mon Dec 16 17:15:10 2019
 """
 import numpy as np
 from pyomo.opt import SolverFactory
+from scipy.optimize import brute
 import matplotlib.pyplot as plt
 
 from ..epscon._eps_optimization import iterate, info
-from .._numpy_core import lrange
+from .._numpy_core import lrange, p_convolve, mean, fidelity
+from ..stat import ppoisson, pthermal
 
 
 def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=1,
@@ -42,3 +44,13 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=1,
             plt.show()
 
     return res
+
+
+def predict_nmean(P):
+    N = len(P)
+    opt = lambda x: 1 - fidelity(p_convolve(ppoisson(x[0], N), pthermal(x[1], N)), P)
+    res = brute(opt, [(0, mean(P)), (0.0, mean(P))])
+    smean, nmean = res
+    return nmean
+    
+    
