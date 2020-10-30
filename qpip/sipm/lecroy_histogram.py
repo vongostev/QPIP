@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-
+"""
+@author: Pavel Gostev
+"""
 from ..detection_core import normalize, lrange
 
 import numpy as np

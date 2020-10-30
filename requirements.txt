@@ -1,0 +1,9 @@
+numpy
+scipy
+matplotlib
+pyomo
+qutip
+lecroyparcer
+joblib
+dataclasses
+logging

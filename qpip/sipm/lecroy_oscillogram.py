@@ -2,7 +2,7 @@
 """
 Created on Thu Jul  4 16:25:54 2019
 
-@author: von.gostev
+@author: Pavel Gostev
 """
 import gc
 from dataclasses import dataclass
