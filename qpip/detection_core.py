@@ -34,10 +34,10 @@ def t_matrix(qe:float, N:int, M:int, mtype='binomial', n_cells=0):
         Maximum number of photocounts
     mtype : {'binomial', 'subbinomial'}, optional
         Type of the detector: ideal is binomial, realistic is subbinomial,
-        but in most applications one can consider the detector as binomial
+        but in the most of applications one can consider the detector as binomial
         The default is 'binomial'.
     n_cells : TYPE, optional
-        Number of photocounting cells is subbinomial case. The default is 0.
+        Number of photocounting cells in the subbinomial case. The default is 0.
 
     Raises
     ------

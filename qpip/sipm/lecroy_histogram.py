@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from ..detection_core import normalize, mean, g2, lrange, abssum
 
-import os
+from ..detection_core import normalize, lrange
+
 import numpy as np
 from scipy.signal import find_peaks
-import pybobyqa
 
 import matplotlib.pyplot as plt
 import logging
@@ -15,13 +14,39 @@ if (log.hasHandlers()):
     log.handlers.clear()
 info = log.info
 
-EXT = ".png"
 
+def hist2Q(hist, discrete, threshold=2, peak_width=1, plot=False):
+    """
+    Build photocounting statistics from an experimental histogram
 
-def hist2Q(hist, discrete=5, threshold=1, plot=False):
+    Parameters
+    ----------
+    hist : iterable
+        The experimental histogram.
+    discrete : int
+        The amplitude of single photocount pulse in points.
+    threshold : int, optional
+        Minimal number of events to find histogram peak.
+        The default is 2.
+    peak_width : int, optional
+        The width of peaks.
+        It must be 1 if the histogram is made by 'count' method.
+        It must be greater if the histogram is made by oscilloscope or 'max' method.
+        The default is 1.
+    plot : bool, optional
+        Flag to plot hist and results of find_peaks.
+        The default is False.
+
+    Returns
+    -------
+    Q : ndarray
+        The photocounting statistics.
+
+    """
     hist = np.concatenate(([0], hist))
-    peaks, _ = find_peaks(hist, threshold=threshold, distance=discrete)
-    downs, _ = find_peaks(-hist, distance=discrete)
+    peaks, _ = find_peaks(hist, threshold=threshold, distance=discrete,
+                          width=peak_width)
+    downs, _ = find_peaks(-hist, distance=discrete, width=peak_width)
     downs = np.append([0], downs)
     if plot:
         plt.plot(hist)
@@ -38,24 +63,43 @@ def hist2Q(hist, discrete=5, threshold=1, plot=False):
 
 
 class QStatisticsMaker:
+    """
+    Class to make photocounting statistics from histogram
+
+    __init__ arguments
+    ----------
+    fname : string
+        File name contains the histogram.
+    photon_discrete : float
+        The amplitude of the single-photocount pulse.
+    peak_width : int, optional
+        The width of peaks.
+        It must be 1 if the histogram is made by 'count' method.
+        It must be greater if the histogram is made by oscilloscope or 'max' method.
+        The default is 1.
+    skiprows : int, optional
+        Number of preamble rows in the file. The default is 0.
+    plot : bool, optional
+        Flag to plot hist and results of find_peaks.
+        The default is False.
+
+    Methods
+    -------
+    getq : ndarray
+        Returns the photocounting statistics was made
+        It is self.Q
+    """
 
     def __init__(self, fname, photon_discrete,
-                 skiprows=0, offset=0, method='auto', plot=False):
-
+                 peak_width=1, skiprows=0, plot=False):
         self.photon_discrete = photon_discrete
         self.fname = fname
         self.Q = []
         self.plot = plot
 
         self._extract_data(skiprows)
-
-        if method == 'auto':
-            self.Q = hist2Q(self.hist, discrete=self.points_discrete // 2,
-                            plot=self.plot)
-        else:
-            self._nonauto_make_hist(method, offset)
-        # All attributes
-        # hist, photocounts_stats, intervals_num, fname, photon_discrete
+        self.Q = hist2Q(self.hist, discrete=self.points_discrete // 2,
+                        peak_width=peak_width, plot=self.plot)
 
     # Reading information from file
     def _extract_data(self, skiprows):
@@ -71,9 +115,6 @@ class QStatisticsMaker:
         self.bins = bins
         self.points_discrete = int(self.photon_discrete /
                                    (self.bins[1] - self.bins[0]))
-
-    def _nonauto_make_hist(self, method, offset):
-        raise ValueError('Only auto method can be applied')
 
     def getq(self):
         self.Q = self.Q[self.Q > 0]
