@@ -3,7 +3,7 @@ scipy
 matplotlib
 pyomo
 qutip
-lecroyparcer
+lecroyparser
 joblib
 dataclasses
 logging
