@@ -5,12 +5,14 @@ Created on Fri Oct 23 14:49:11 2020
 
 @author: Pavel Gostev
 """
-from .._numpy_core import fact, positive_index
+from .._numpy_core import fact
 from ..detection_core import moment, g2
 import numpy as np
 from pyomo.core.expr.numvalue import RegisterNumericType
-from pyomo.environ import (ConcreteModel, Expression, RangeSet, Var, Param, Constraint,
+from pyomo.environ import (ConcreteModel, Expression, RangeSet,
+                           Var, Param, Constraint,
                            exp, log, quicksum)
+from pyomo.dae.plugins.colloc import conv
 
 RegisterNumericType(np.float128)
 
@@ -21,8 +23,7 @@ def e_ppoisson(model, n):
 
 
 def e_p_estimation(model, n):
-    return quicksum([model.ppoisson[positive_index(n - m, model.NSET)] * model.p_noise[m]
-                     for m in model.NSET])
+    return conv(model.ppoisson, model.p_noise)[n]
 
 
 def e_disprepancy(model):
@@ -58,7 +59,7 @@ class DenoisePBaseModel(ConcreteModel):
     """
     Pyomo model for denoising problem
     It is made for solve four-criterium problem
-    to find solution with minimum 
+    to find solution with minimum
     disprepancy, negentropy, g2 and mean of noise distribution
 
     __init__ arguments
@@ -67,9 +68,6 @@ class DenoisePBaseModel(ConcreteModel):
         Noised distribution.
     M : int
         Length of noise distribution.
-    delcrosstalk : bool, optional
-        Fixed p_noise[0] to 0.
-        The default is False.
 
     Variables
     ---------
@@ -86,7 +84,8 @@ class DenoisePBaseModel(ConcreteModel):
         Quadratic disprepancy between P end PEST
 
     """
-    def __init__(self, P, M, delcrosstalk=False):
+
+    def __init__(self, P, M):
         super().__init__()
 
         assert type(P) == np.ndarray
@@ -103,16 +102,13 @@ class DenoisePBaseModel(ConcreteModel):
         self.p_noise = Var(self.NSET, initialize=dict(enumerate(init_noise)),
                            bounds=(0, 1))
 
-        if delcrosstalk:
-            self.p_noise[0].fix(0)
-            self.NZSET = RangeSet(1, M - 1)
-
         self.noise_mean = Expression(rule=e_noisemean)
         self.noise_g2 = Expression(rule=e_noiseg2)
 
         self.ppoisson = Expression(self.PSET, rule=e_ppoisson)
         self.PEST = Expression(self.PSET,
                                rule=e_p_estimation)
+
         self.disprepancy = Expression(rule=e_disprepancy)
         self.negentropy = Expression(rule=e_negentropy)
 

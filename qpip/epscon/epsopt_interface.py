@@ -24,6 +24,42 @@ from ._eps_optimization import iterate, info
 def invpopt(invpmodel, solver=None,
             eps_tol=0, save_all_nondom_x=False,
             save_all_nondom_y=False, disp=False, plot=False):
+    """
+    Interface to epsilon-constrained algorithm
+    Made to solve photocounting inverse problem
+
+    Parameters
+    ----------
+    invpmodel : pyomo.environ.ConcreteModel
+        The pyomo model described a problem.
+    solver : pyomo.opt.SolverFactory, optional
+        Solver to solve the problem.
+        The default is ipopt if installed.
+    eps_tol : float, optional
+        Tolarance of additional variables to finish iterations.
+        The default is 0.
+    save_all_nondom_x : bool, optional
+        Save all nondominate solutions in output.
+        The default is False.
+    save_all_nondom_y : bool, optional
+        Save y vector values for all nondominate solutions.
+        The default is False.
+    disp : bool, optional
+        Display calculation progress.
+        Messages have following format:
+            'iteration number' 'status (1 is success, 0 is fail)' ['rel_entropy', 'negentropy']
+        The default is False.
+    plot : bool, optional
+        Plot dependency of 'rel_entropy' and 'negentropy' from an iteration number
+        after the end of calculations.
+        The default is False.
+
+    Returns
+    -------
+    res : scipy.optimize.OptimizeResult
+        see help(qpip.epscon.iterate).
+
+    """
 
     if solver is None:
         solver = SolverFactory('ipopt', solver_io="nl")

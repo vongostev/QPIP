@@ -29,20 +29,9 @@ def fact(n):
     return DPREC(factorial(n, exact=True))
 
 
-def positive_index(i, data):
-    if i < 0:
-        return len(data) + i
-    return i
-
-
 def p_convolve(p_signal, p_noise):
-    grid_signal = lrange(p_signal)
-    grid_noise = lrange(p_noise)
-
-    def sfun(m): return \
-        sum([p_signal[positive_index(m - n, grid_noise)] * p_noise[n]
-             for n in grid_noise])
-    return np.vectorize(sfun)(grid_signal)
+    N = max(len(p_signal), len(p_noise))
+    return normalize(np.convolve(p_signal, p_noise)[:N])
 
 
 def moment(p, N):

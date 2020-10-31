@@ -7,3 +7,4 @@ lecroyparser
 joblib
 dataclasses
 logging
+ipopt

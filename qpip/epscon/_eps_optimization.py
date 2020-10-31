@@ -6,11 +6,11 @@ Created on Thu Oct 17 14:14:53 2019
 
 Epsilon-constraint algorithm with arbitrary number of variables
 
-Kirlik, G., & Sayın, S. (2014). 
-A new algorithm for generating all nondominated solutions 
-of multiobjective discrete optimization problems. 
-European Journal of Operational Research, 232(3), 479–488. 
-doi:10.1016/j.ejor.2013.08.001 
+Kirlik, G., & Sayın, S. (2014).
+A new algorithm for generating all nondominated solutions
+of multiobjective discrete optimization problems.
+European Journal of Operational Research, 232(3), 479–488.
+doi:10.1016/j.ejor.2013.08.001
 """
 from pyomo.environ import (Objective, Constraint, ConstraintList,
                            value, minimize)
@@ -88,7 +88,7 @@ def Q1(epsilon, z_optimal, model, y_vars):
         DESCRIPTION.
 
     """
-    
+
     if hasattr(model, 'Obj'):
         model.del_component(model.Obj)
         model.epsilon_constraints.clear()
@@ -133,7 +133,7 @@ def step_solve(epsilon, model, solver, y_vars, x_var):
         DESCRIPTION.
 
     """
-    
+
     try:
         P = P1(epsilon, model, y_vars)
         solver.solve(P, tee=0)
@@ -257,10 +257,10 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
     eps_bounds : list of lists
         Lower and upper bound of expression to optimize.
     eps_tol : float, optional
-        Tolerance of y_vars to terminate iterations. 
+        Tolerance of y_vars to terminate iterations.
         The default is 0 and ignored.
     maxiter : int, optional
-        Maximum number of iterations. 
+        Maximum number of iterations.
         The default is 0 and ignored.
     save_all_nondom_x : bool, optional
         Save all x_var values.
@@ -277,6 +277,12 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
     scipy.optimize.OptimizeResult
         Optimization result with fields:
         - status: short and long definition of termination status
+        - nit: number of iterations
+        - model: final state of the model of the problem
+        - x: final solution
+        - y: criteria values related to x
+        - ndx: list of all nondominate solutions
+        - ndy: list of critera values related to ndx
     """
 
     u_min, u_max = eps_bounds
@@ -308,7 +314,7 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
 
         if len(nondom_y) > 2:
             delta_norm = sum((x - y) ** 2 for x, y in
-                    zip(nondom_y[-1][1:], nondom_y[-2][1:])) ** 0.5
+                             zip(nondom_y[-1][1:], nondom_y[-2][1:])) ** 0.5
             if delta_norm < eps_tol:
                 status = 'ftolsuccess'
                 break
@@ -342,13 +348,13 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
 
         rectangle_list = remove_rectangle(
             rectangle_list, f_optimal[1:], epsilon)
-        
+
         if disp:
             info('%d %d %s' % (len(nondom_y), solve_flag, f_optimal))
 
         if save_all_nondom_x:
             nondom_x.append(pyomo_values(getattr(model, x_var)))
-            
+
         if maxiter and len(nondom_y) > maxiter:
             status = 'maxiter'
             break
@@ -367,5 +373,5 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
         'ndx': np.array(nondom_x) if save_all_nondom_x else [],
         'ndy': np.array(nondom_y) if save_all_nondom_y else []
     }
-    
+
     return OptimizeResult(res)
