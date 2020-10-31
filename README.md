@@ -61,8 +61,8 @@ M = 10 # length of the noise distribution
 N0 = int(1E6) # number of events
 ERR = 1e-2 # relative error for photocounting statistics
 
-noise = pthermal(1, M)
-P = normalize(p_convolve(ppoisson(6, N), noise)) # noised distribution
+pnoise = pthermal(1, M)
+P = normalize(p_convolve(ppoisson(6, N), pnoise)) # noised distribution
 PND = np.random.choice(range(N), size=N0, p=P.astype(float)) # random events
 PN = np.histogram(PND, bins=range(N + 1), density=True)[0] 
 PN = np.abs(PN*(1 + np.random.uniform(-ERR, ERR, size=N)))
@@ -71,9 +71,9 @@ PN = normalize(PN) # statistics for the sample of N0 size
 Find optimal estimation
 ```python
 dnpmodel = DenoisePBaseModel(PN, M) # make optimization model
-res = denoiseopt(dnpmodel, eps_tol=1e-5, mean_ubound=2) # optimize it!
+res = denoiseopt(dnpmodel, g2_lbound=2) # optimize it!
 print(res) # print result (OptimizeResult)
-print(fidelity(res.x, noise))
+print(fidelity(res.x, pnoise))
 ```
 
 # Requirements
