@@ -20,7 +20,7 @@ from scipy.optimize import OptimizeResult
 
 import logging
 
-logger = logging.getLogger('epsilon')
+logger = logging.getLogger('epsopt')
 logger.setLevel(logging.INFO)
 if (logger.hasHandlers()):
     logger.handlers.clear()
@@ -38,21 +38,20 @@ def greater(l1, l2):
 
 def P1(epsilon, model, y_vars):
     """
-    
 
     Parameters
     ----------
-    epsilon : TYPE
-        DESCRIPTION.
-    model : TYPE
-        DESCRIPTION.
-    y_vars : TYPE
-        DESCRIPTION.
+    epsilon : list
+        Upper bound of y_vars[1:].
+    model : pyomo.environ.ConcreteModel
+        pyomo model of the problem in the initial state.
+    y_vars : list
+        Names of model expressions to optimize.
 
     Returns
     -------
-    model : TYPE
-        DESCRIPTION.
+    model : pyomo.environ.ConcreteModel
+        The model in the final state
 
     """
 
@@ -73,19 +72,19 @@ def Q1(epsilon, z_optimal, model, y_vars):
 
     Parameters
     ----------
-    epsilon : TYPE
-        DESCRIPTION.
-    z_optimal : TYPE
-        DESCRIPTION.
-    model : TYPE
-        DESCRIPTION.
-    y_vars : TYPE
-        DESCRIPTION.
+    epsilon : list
+        Upper bound of y_vars[1:].
+    z_optimal : float
+        Value for equality of y_vars[0].
+    model : pyomo.environ.ConcreteModel
+        pyomo model of the problem in the initial state.
+    y_vars : list
+        Names of model expressions to optimize.
 
     Returns
     -------
-    model : TYPE
-        DESCRIPTION.
+    model : pyomo.environ.ConcreteModel
+        The model in the final state
 
     """
 
@@ -105,32 +104,30 @@ def Q1(epsilon, z_optimal, model, y_vars):
 
 def step_solve(epsilon, model, solver, y_vars, x_var):
     """
-    
 
     Parameters
     ----------
-    epsilon : TYPE
-        DESCRIPTION.
-    model : TYPE
-        DESCRIPTION.
+    epsilon : list
+        Upper bound of y_vars[1:].
+    model : pyomo.environ.ConcreteModel
+        pyomo model of the problem.
     solver : pyomo.opt.Solver
-        DESCRIPTION.
-    y_vars : list of strings
-        DESCRIPTION.
+    y_vars : list
+        Names of model expressions to optimize.
     x_var : string
-        DESCRIPTION.
+        Name of model variable.
 
     Raises
     ------
     ValueError
-        DESCRIPTION.
+        Error of values extraction from y_vars.
 
     Returns
     -------
-    solve_flag : TYPE
-        DESCRIPTION.
-    res : TYPE
-        DESCRIPTION.
+    solve_flag : int
+        Flag of solution: 1 is OK, 0 is fail.
+    res : list
+        List of y_vars values.
 
     """
 
@@ -275,14 +272,28 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
     Returns
     -------
     scipy.optimize.OptimizeResult
-        Optimization result with fields:
-        - status: short and long definition of termination status
-        - nit: number of iterations
-        - model: final state of the model of the problem
-        - x: final solution
-        - y: criteria values related to x
-        - ndx: list of all nondominate solutions
-        - ndy: list of critera values related to ndx
+            status : (str, str)
+                Short and long definition of termination status
+            nit : int
+                Number of iterations
+            model : pyomo.environ.ConcreteModel
+                Final state of the model of the problem
+            x : ndarray
+                Final solution
+            y : dict
+                Criteria values related to x
+            ndx : ndarray
+                List of all nondominate solutions
+            ndy : ndarray
+                List of critera values related to ndx
+
+    References
+    ----------
+    .. [1]
+    Kirlik, G., & Sayın, S. (2014), "A new algorithm for generating all
+    nondominated solutions of multiobjective discrete optimization problems."
+    European Journal of Operational Research, 232(3), 479–488.
+    doi:10.1016/j.ejor.2013.08.001
     """
 
     u_min, u_max = eps_bounds
@@ -370,8 +381,8 @@ def iterate(model, solver, y_vars, x_var, eps_bounds,
         'model': model,
         'x': pyomo_values(getattr(model, x_var)),
         'y': dict(zip(y_vars, nondom_y[-1] if len(nondom_y) > 0 else np.zeros_like(y_vars))),
-        'ndx': np.array(nondom_x) if save_all_nondom_x else [],
-        'ndy': np.array(nondom_y) if save_all_nondom_y else []
+        'ndx': np.array(nondom_x) if save_all_nondom_x else np.array([]),
+        'ndy': np.array(nondom_y) if save_all_nondom_y else np.array([])
     }
 
     return OptimizeResult(res)

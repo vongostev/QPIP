@@ -14,7 +14,7 @@ def qthermal_unpolarized(m, mean, M):
     """ Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0 """
     return sum(gamma(m - k + M) / (gamma(m - k + 1) * gamma(M)) *
                gamma(k + M) / (gamma(k + 1) * gamma(M))
-               for k in range(m + 1)) * \
+               for k in np.arange(m + 1)) * \
         (1 + 2 * M / mean) ** (- m) * (1 + mean / 2 / M) ** (- 2 * M)
 
 

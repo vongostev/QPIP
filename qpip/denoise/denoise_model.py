@@ -26,7 +26,7 @@ def e_p_estimation(model, n):
     return conv(model.ppoisson, model.p_noise)[n]
 
 
-def e_disprepancy(model):
+def e_discrepancy(model):
     return quicksum([(model.PEST[n] - model.P[n]) ** 2 for n in model.PSET])
 
 
@@ -60,7 +60,7 @@ class DenoisePBaseModel(ConcreteModel):
     Pyomo model for denoising problem
     It is made for solve four-criterium problem
     to find solution with minimum
-    disprepancy, negentropy, g2 and mean of noise distribution
+    discrepancy, negentropy, g2 and mean of noise distribution
 
     __init__ arguments
     ----------
@@ -81,7 +81,7 @@ class DenoisePBaseModel(ConcreteModel):
     negentropy : pyomo.environ.Expression
         Negentropy of p_noise
     rel_entropy:
-        Quadratic disprepancy between P end PEST
+        Quadratic discrepancy between P end PEST
 
     """
 
@@ -109,7 +109,7 @@ class DenoisePBaseModel(ConcreteModel):
         self.PEST = Expression(self.PSET,
                                rule=e_p_estimation)
 
-        self.disprepancy = Expression(rule=e_disprepancy)
+        self.discrepancy = Expression(rule=e_discrepancy)
         self.negentropy = Expression(rule=e_negentropy)
 
         self.c_noisesum = Constraint(rule=c_noisesum)
