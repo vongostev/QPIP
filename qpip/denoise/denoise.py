@@ -43,7 +43,7 @@ def thermalnoise_mean(P):
     return nmean
 
 
-def noiseg2_mean(P, noise_g2):
+def noisemean_by_g2(P, noise_g2):
     """
     Calculate mean value of the noise distribution for given noised distribution
     and :math:`g^{(2)}` value of the noise distribution.
@@ -76,7 +76,7 @@ def noiseg2_mean(P, noise_g2):
     return np.sqrt((g2(P) - 1) / (noise_g2 - 1)) * mean(P)
 
 
-def noisemean_g2(P, nmean):
+def noiseg2_by_mean(P, nmean):
     """
     Calculate :math:`g^{(2)}` value of the noise distribution for
     given noised distribution and mean value of the noise distribution.
@@ -183,25 +183,25 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
 
     if mean_ubound:
         dnmodel.c_low_g2 = Constraint(
-            expr=dnmodel.noise_g2 >= predict_ng2_by_nmean(dnmodel.P, mean_ubound))
+            expr=dnmodel.noise_g2 >= noiseg2_by_mean(dnmodel.P, mean_ubound))
         dnmodel.c_top_mean = Constraint(expr=dnmodel.noise_mean <= mean_ubound)
 
     if mean_lbound:
         dnmodel.c_top_g2 = Constraint(
-            expr=dnmodel.noise_g2 <= predict_ng2_by_nmean(dnmodel.P, mean_lbound))
+            expr=dnmodel.noise_g2 <= noiseg2_by_mean(dnmodel.P, mean_lbound))
         dnmodel.c_low_mean = Constraint(expr=dnmodel.noise_mean >= mean_lbound)
 
     if g2_ubound:
         dnmodel.c_top_g2 = Constraint(
             expr=dnmodel.noise_g2 <= g2_ubound)
         dnmodel.c_low_mean = Constraint(
-            expr=dnmodel.noise_mean >= predict_nmean_by_g2(dnmodel.P, g2_ubound))
+            expr=dnmodel.noise_mean >= noisemean_by_g2(dnmodel.P, g2_ubound))
 
     if g2_lbound:
         dnmodel.c_low_g2 = Constraint(
             expr=dnmodel.noise_g2 >= g2_lbound)
         dnmodel.c_top_mean = Constraint(
-            expr=dnmodel.noise_mean <= predict_nmean_by_g2(dnmodel.P, g2_lbound))
+            expr=dnmodel.noise_mean <= noisemean_by_g2(dnmodel.P, g2_lbound))
 
     mean_bound = mean(dnmodel.P) if not mean_ubound else mean_ubound
     noise_bounds = [[max(0, mean_lbound), -np.log(len(dnmodel.NSET)), max(1, g2_lbound)],
