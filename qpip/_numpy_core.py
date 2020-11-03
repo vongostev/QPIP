@@ -3,16 +3,21 @@
 """
 Created on Fri Oct  2 13:11:13 2020
 
-@author: vong
+@author: Pavel Gostev
 
-numpy.floqt128 version
+numpy version
 """
 
 import functools
 import numpy as np
 from scipy.special import factorial, binom
 
-DPREC = np.float128
+try:
+    DPREC = np.float128
+except:
+    DPREC = np.float64
+    np.warnings.warn_explicit("Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.",
+                              RuntimeWarning, __file__, 18)
 
 def compose(*functions):
     def pack(x): return x if type(x) is tuple else (x,)

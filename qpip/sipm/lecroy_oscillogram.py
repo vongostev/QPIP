@@ -15,25 +15,23 @@ import numpy as np
 from os.path import isfile, join
 from os import listdir
 import time
+from compress_pickle import dump, load
 from joblib import Parallel, delayed
 
 gc.enable()
 
 
 def parse_file(datafile):
-    data = lecroyparser.ScopeData(datafile)
-    return data
+    return lecroyparser.ScopeData(datafile)
 
 
-def parse_files(datadir, fnum=0):
+def parse_files(datadir, fnum=0, parallel=False):
     trc_files = [join(datadir, f) for f in listdir(datadir)
                  if isfile(join(datadir, f)) and f.endswith('.trc')]
     if fnum > 0:
         trc_files = trc_files[:fnum]
-    data = []
-    for datafile in trc_files:
-        data.append(parse_file(datafile))
-
+    n_jobs = -1 if parallel else 1
+    data = Parallel(n_jobs=n_jobs, backend="threading")([delayed(parse_file)(df) for df in trc_files])
     return data
 
 
@@ -62,6 +60,58 @@ def correct_baseline(y, lam=1e5, p=0.1):
     return y - baseline_values
 
 
+def single_pulse(y, discrete, method='max'):
+    """
+    Get amplitude of the single pulse
+
+    Parameters
+    ----------
+    y : ndarray
+        Oscillogram of the single pulse.
+
+    Returns
+    -------
+    Amplitude : float
+        Amplitude of the pulse.
+        It can be discrete (if 'counts')
+        or continuous (if 'max')
+
+    """
+
+    if method == 'counts':
+        peaks = find_peaks(y, 0.02, 100)
+        ypeaks = y[peaks]
+        count = 0
+        for p in ypeaks:
+            for m in range(100):
+                if abs(p / discrete - m) < 0.25:
+                    count += m
+                    break
+        return count
+    elif method == 'max':
+        return max(y)
+
+
+def periodic_pulse(data, frequency, time_window, discrete, method='max'):
+    discretedata = []
+    points_period = int(1 / frequency / data.horizInterval) + 1
+    points_window = int(time_window / data.horizInterval) + 1
+    y = data.y    
+    init_point = np.argmax(y)
+    pulses_points = np.append(
+            np.arange(init_point, 0, -points_period)[::-1],
+            np.arange(init_point, len(y), points_period))
+    for p in pulses_points:
+        if p < points_window:
+            low = 0
+            top = points_window
+        else:
+            low = p - points_window // 2
+            top = p + points_window // 2
+        discretedata.append(single_pulse(y[low:top], discrete, method))
+    return np.array(discretedata, dtype=np.float)
+
+
 @dataclass
 class PulsesHistMaker:
     datadir: str
@@ -71,109 +121,97 @@ class PulsesHistMaker:
     fchunksize: int = 10
     parallel: bool = False
     parallel_jobs: int = -1
-    memo: bool = False
+    memo_file: str = ''
     parallel: bool = False
     histbins: int = 2000
+    correct_baseline: bool = True
 
     def __post_init__(self):
+        if not self.parallel:
+            self.parallel_jobs = 1
         if self.method not in ('max', 'counts'):
             raise ValueError('method must be "max" or "counts", not %s' %
                              self.method)
 
-    def read(self):
-        self.rawdata = parse_files(self.datadir, self.fsnum)
-        self.filesnum = len(self.rawdata)
+    def read(self, parallel_read=False):
+        self.rawdata = parse_files(self.datadir, self.fsnum, parallel_read)
+        if self.memo_file:
+            with open(self.memo_file, 'rb') as f:
+                memodata = load(f, compression='lzma', set_default_extension=False)
+            for r in self.rdata:
+                if r.path in memodata:
+                    r.y = memodata[r.path]
 
-    def single_pulse(self, y):
-        if self.method == 'counts':
-            peaks = find_peaks(y, 0.02, 100)
-            ypeaks = y[peaks]
-            count = 0
-            for p in ypeaks:
-                for m in range(100):
-                    if abs(p / self.discrete - m) < 0.25:
-                        count += m
-                        break
-            return count
-        elif self.method == 'max':
-            return max(y)
+        self.filesnum = len(self.rawdata)
+        
+    def save(self, filename):
+        memodata = dict()
+        for r in self.rawdata:
+            memodata[r.path] = r.y
+        with open(filename, 'wb') as f:
+            dump(memodata, f, compression='lzma', set_default_extension=False)
+            
+    def save_hist(self, filename):
+        np.savetxt(filename, np.vstack((self.bins[:-1], self.hist)).T)
+        
+    def memo_oscillogram(self, data):
+        if self.memo_file:
+            return data
+        
+        y = data.y
+        y -= np.min(y)
+        if self.correct_baseline:
+            data.y = correct_baseline(y)
+        else:
+            data.y = y
+        return data
 
     def single_pulse_hist(self, div_start=5.9, div_width=0.27):
         discretedata = []
         i = 1
         for d in self.rawdata:
             x, y = windowed(d, div_start, div_width)
-            discretedata.append(self.single_pulse(y))
+            discretedata.append(single_pulse(y, self.discrete, self.method))
             i += 1
-        self.hist, self.bins = np.histogram(discretedata, bins=self.nbins)
-
-    def periodic_pulse(self, data, frequency, time_window):
-        discretedata = np.array([])
-        points_period = int(1 / frequency / data.horizInterval) + 1
-        points_window = int(time_window / data.horizInterval) + 1
-
-        y = correct_baseline(data.y)
-        init_point = np.argmax(y)
-        pulses_points = np.append(
-                np.arange(init_point, 0, -points_period)[::-1],
-                np.arange(init_point, len(y), points_period))
-        for p in pulses_points:
-            if p < points_window:
-                low = 0
-                top = points_window
-            else:
-                low = p - points_window // 2
-                top = p + points_window // 2
-            np.append(discretedata, self.single_pulse(y[low:top]))
-        return discretedata
+        self.hist, self.bins = np.histogram(discretedata, bins=self.histbins)
 
     def multi_pulse_histogram(self, frequency=2.5e6, time_window=7.5e-9):
-        discretedata = np.array([])
+        discretedata = []
 
         for i in range(0, self.filesnum, self.fchunksize):
             t = time.time()
             hb = min(i + self.fchunksize, self.filesnum)
-            if self.parallel:
-                pulsesdata = Parallel(n_jobs=self.parallel_jobs)(
-                    delayed(self.periodic_pulse)(data, frequency, time_window)
-                    for data in self.rawdata[i:hb])
-            else:
-                pulsesdata = [self.periodic_pulse(data, frequency, time_window)
-                              for data in self.rawdata[i:hb]]
-            discretedata = np.append(discretedata, pulsesdata)
+            pulsesdata = Parallel(n_jobs=self.parallel_jobs, backend="threading")(
+                delayed(periodic_pulse)(self.memo_oscillogram(df),
+                                        frequency, time_window, self.discrete, self.method)
+                                        for df in self.rawdata[i:hb])
+            discretedata += pulsesdata
             print('Files ##%d-%d time %.2f s' % (i, hb, time.time() - t), end='\t')
             del pulsesdata
             gc.collect()
 
-        self.hist, self.bins = np.histogram(discretedata, bins=self.nbins)
+        self.hist, self.bins = np.histogram(discretedata, bins=self.histbins)
 
     def scope_unwindowed(self, data, time_discrete):
         points_discrete = int(time_discrete // data.horizInterval)
         y = data.y
-        y -= min(y)
-        y = correct_baseline(y)
-
         points_discrete += 1
-        discretedata = [self.single_pulse(y[i:i + points_discrete])
+        discretedata = [single_pulse(y[i:i + points_discrete], self.discrete, self.method)
                         for i in range(0, len(y), points_discrete)]
         return discretedata
 
     def unwindowed_histogram(self, time_discrete=15e-9):
-        discretedata = np.array([])
+        discretedata = []
 
         for i in range(0, self.filesnum, self.fchunksize):
             t = time.time()
             hb = min(i + self.fchunksize, self.filesnum)
-            if self.parallel:
-                pulsesdata = Parallel(n_jobs=self.parallel_jobs)(
-                    delayed(self.scope_unwindowed)(data, time_discrete)
-                    for data in self.rawdata[i:hb])
-            else:
-                pulsesdata = [self.scope_unwindowed(data, time_discrete)
-                              for data in self.rawdata[i:hb]]
-            discretedata = np.append(discretedata, pulsesdata)
+            pulsesdata = Parallel(n_jobs=self.parallel_jobs, backend="threading")(
+                delayed(self.scope_unwindowed)(self.memo_oscillogram(df), 
+                                               time_discrete) for df in self.rawdata[i:hb])
+            discretedata += pulsesdata
             print('Files ##%d-%d time %.2f s' % (i, hb, time.time() - t), end='\t')
             del pulsesdata
             gc.collect()
 
-        self.hist, self.bins = np.histogram(discretedata, bins=self.nbins)
+        self.hist, self.bins = np.histogram(discretedata, bins=self.histbins)

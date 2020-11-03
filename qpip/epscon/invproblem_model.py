@@ -11,10 +11,8 @@ from pyomo.environ import (RangeSet, Set, ConcreteModel, Param,
                            quicksum, log)
 from pyomo.core.expr.numvalue import RegisterNumericType
 
-from ..detection_core import compose, moment, t_matrix
+from ..detection_core import compose, moment, t_matrix, DPREC
 
-
-DPREC = np.float128
 RegisterNumericType(DPREC)
 
 dictenum = compose(dict, enumerate)

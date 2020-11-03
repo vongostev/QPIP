@@ -14,9 +14,6 @@ from functools import lru_cache
 from ._numpy_core import *
 
 
-DPREC = np.float128
-
-
 def binomial_t_elem(qe: float, n: int, m: int):
     if m > n:
         return 0

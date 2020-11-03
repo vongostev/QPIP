@@ -8,3 +8,4 @@ joblib
 dataclasses
 logging
 ipopt
+compress_pickle
