@@ -194,22 +194,7 @@ class PulsesHistMaker:
         self.hist, self.bins = np.histogram(discretedata, bins=self.histbins)
 
     def multi_pulse_histogram(self, frequency=2.5e6, time_window=7.5e-9):
-        discretedata = []
-
-        for i in range(0, self.filesnum, self.fchunksize):
-            t = time.time()
-            hb = min(i + self.fchunksize, self.filesnum)
-            self.rawdata[i:hb] = Parallel(n_jobs=self.parallel_jobs)([
-                delayed(memo_oscillogram)(df, self.correct_baseline) for df in self.rawdata[i:hb]])
-            pulsesdata = [periodic_pulse(df[1], frequency, time_window, self.discrete, self.method)
-                          for df in self.rawdata[i:hb]]
-            discretedata += pulsesdata
-            print('Files ##%d-%d time %.2f s' % (i, hb, time.time() - t), end='\t')
-            del pulsesdata
-            gc.collect()
-            self.clear_rawdata(i, hb)
-
-        self.hist, self.bins = np.histogram(discretedata, bins=self.histbins)
+        self.parse(periodic_pulse, (frequency, time_window, self.discrete, self.method))
 
     def scope_unwindowed(self, data, time_discrete):
         points_discrete = int(time_discrete // data.horizInterval)
@@ -220,16 +205,22 @@ class PulsesHistMaker:
         return discretedata
 
     def unwindowed_histogram(self, time_discrete=15e-9):
+        self.parse(self.scope_unwindowed, (time_discrete,))
+
+    def parse(self, func, args):
         discretedata = []
 
         for i in range(0, self.filesnum, self.fchunksize):
             t = time.time()
             hb = min(i + self.fchunksize, self.filesnum)
-            self.rawdata[i:hb] = [self.memo_oscillogram(df) for df in self.rawdata[i:hb]]
-            pulsesdata = Parallel(n_jobs=self.parallel_jobs, backend="threading")(
-                delayed(self.scope_unwindowed)(df[1], time_discrete) for df in self.rawdata[i:hb])
+            self.rawdata[i:hb] = Parallel(n_jobs=self.parallel_jobs)([
+                delayed(memo_oscillogram)(df, self.correct_baseline) for df in self.rawdata[i:hb]])
+            pulsesdata = [func(df[1], *args) for df in self.rawdata[i:hb]]
             discretedata += pulsesdata
+            
             print('Files ##%d-%d time %.2f s' % (i, hb, time.time() - t), end='\t')
+
+            self.clear_rawdata(i, hb)            
             del pulsesdata
             gc.collect()
 

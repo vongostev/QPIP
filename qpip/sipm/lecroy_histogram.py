@@ -71,15 +71,14 @@ def hist2Q(hist, bins, discrete, threshold=1, peak_width=1, plot=False, method='
     JOSA B 27.5 (2010): 852-862.
 
     """
-    hist = np.concatenate(([0], hist))
     peaks, _ = find_peaks(hist, threshold=threshold, distance=discrete,
                           width=peak_width)
-    downs, _ = find_peaks(-hist, distance=discrete, width=peak_width)
+    downs, _ = find_peaks(-hist, distance=discrete, width=1)
     downs = np.append([0], downs)
     if plot:
-        plt.plot(hist)
-        plt.scatter(peaks, hist[peaks])
-        plt.scatter(downs, hist[downs])
+        plt.plot(bins, hist)
+        plt.scatter(bins[peaks], hist[peaks])
+        plt.scatter(bins[downs], hist[downs])
         plt.show()
 
     Q = []
