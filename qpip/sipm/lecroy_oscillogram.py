@@ -27,9 +27,9 @@ def parse_file(datafile):
     return data
 
 
-def list_files(datadir, fsnum):
+def list_files(datadir, fsoffset, fsnum):
     return [join(datadir, f) for f in listdir(datadir)
-            if isfile(join(datadir, f)) and f.endswith('.trc')][:fsnum]
+            if isfile(join(datadir, f)) and f.endswith('.trc')][fsoffset:fsoffset+fsnum]
 
 
 def parse_files(trc_files, fsnum=0, parallel=False):
@@ -144,6 +144,7 @@ class PulsesHistMaker:
     method: str
     discrete: float
     fsnum: int = -1
+    fsoffset: int = 0
     fchunksize: int = 10
     parallel: bool = False
     parallel_jobs: int = -1
@@ -162,7 +163,7 @@ class PulsesHistMaker:
     def read(self, fsnum=-1, parallel_read=False):
         if fsnum == -1:
             fsnum = self.fsnum
-        self.rawdata = list_files(self.datadir, fsnum)
+        self.rawdata = list_files(self.datadir, self.fsoffset, fsnum)
         if self.memo_file:
             with open(self.memo_file, 'rb') as f:
                 memodata = load(f, compression='lzma', set_default_extension=False)

@@ -93,10 +93,8 @@ def hist2Q(hist, bins, discrete, threshold=1, peak_width=1, plot=False, method='
                 if method == 'fit':
                     res = minimize(minpoly, args=(bins[dl:dt], hist[dl:dt]), tol=1e-16,
                                    x0=(1, bins[p], np.sqrt(bins[p]), 0.01, 0.01),
-                                   bounds=list(zip([1, bins[dl], bins[1] - bins[0], 
-                                                    -1 if i > 0 else -0.1, -1 if i > 0 else -0.1], 
-                                                   [hist[p], bins[dt], bins[dt] - bins[dl], 
-                                                    1 if i > 0 else 0.1, 1if i > 0 else 0.1])))
+                                   bounds=list(zip([1, bins[dl], bins[1] - bins[0], -1, -1], 
+                                                   [hist[p], bins[dt], bins[dt] - bins[dl], 1, 1])))
                     popt = res.x
                     Q.append(peak_area(*popt))
                     if plot:

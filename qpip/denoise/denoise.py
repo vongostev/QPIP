@@ -7,7 +7,7 @@ Created on Mon Dec 16 17:15:10 2019
 import numpy as np
 from pyomo.opt import SolverFactory
 from pyomo.environ import Constraint
-from scipy.optimize import brute
+from scipy.optimize import brute, OptimizeResult
 import matplotlib.pyplot as plt
 
 from ..epscon._eps_optimization import iterate, info
@@ -166,8 +166,13 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
     -------
     res : scipy.optimize.OptimizeResult
         see help(qpip.epscon.iterate).
-    
+
     """
+    if g2(dnmodel.P) < 1:
+        warn('g2 of the given distribution is less than 1. Algorithm can not be used',
+             RuntimeWarning, __file__, 171)
+        return OptimizeResult(x=[],
+            status=('nosolve', 'g2 of the given distribution is less than 1. Algorithm can not be used'))
 
     if solver is None:
         solver = SolverFactory('ipopt', solver_io="nl")
