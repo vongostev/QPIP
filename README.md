@@ -1,5 +1,5 @@
 # QPIP
- Instruments and methods for solve quantum photocounting inverse problem
+ Instruments and methods to solve quantum photocounting inverse problem
 
 QPIP module consists of some parts:
 - core: Function for calculate photocounting statistics from photon-number statistics and vice versa. Also a bit of utility functions in _numpy_core
@@ -75,6 +75,34 @@ res = denoiseopt(dnpmodel, g2_lbound=2) # optimize it!
 print(res) # print result (OptimizeResult)
 print(fidelity(res.x, pnoise))
 ```
-
+# How to use qpip.sipm?
+Import necessary modules:
+```python
+from qpip.sipm import PulsesHistMaker, QStatisticsMaker, optimize_pcrosstalk, compensate
+```
+Import an experimental data
+```python
+datadir = "C:\\expdata\\"
+parser = PulsesHistMaker(datadir, method='max', discrete=0.021, parallel=True, parallel_jobs=2)
+parser.read()
+```
+Make a histogram
+```python
+histfile = "C:\\histograms\\test.txt"
+parser.multi_pulse_histogram(frequency=1e6, time_window=10e-9)
+parser.save_hist(histfile)
+```
+Make a photocounting statistics
+```python
+histfile = "C:\\histograms\\test.txt"
+qmaker = QStatisticsMaker(histfile, discrete=0.021, method='fit')
+Q = qmaker.getq()
+```
+Determine a crosstalk probability (if an optical signal is coherent) and compensate it
+```python
+PDE = 0.4
+pcrosstalk, res = optimize_pcrosstalk(Q, PDE, N=50)
+Q1 = compensate(Q, pcrosstalk)
+```
 # Requirements
 See requirements.txt
