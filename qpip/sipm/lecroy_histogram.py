@@ -136,7 +136,7 @@ class QStatisticsMaker:
         self.Q = hist2Q(self.hist, self.bins, discrete=self.points_discrete // 2,
                         peak_width=peak_width, plot=self.plot, method=method)
 
-    # Reading information from file
+    # Reading information from the file
     def _extract_data(self, skiprows):
         bins, hist = np.loadtxt(self.fname, skiprows=skiprows).T
         delta = bins[1] - bins[0]

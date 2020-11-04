@@ -149,7 +149,6 @@ class PulsesHistMaker:
     parallel: bool = False
     parallel_jobs: int = -1
     memo_file: str = ''
-    parallel: bool = False
     histbins: int = 2000
     correct_baseline: bool = True
 
