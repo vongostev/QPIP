@@ -73,7 +73,7 @@ def hist2Q(hist, bins, discrete, threshold=1, peak_width=1, plot=False, method='
     """
     peaks, _ = find_peaks(hist, threshold=threshold, distance=discrete,
                           width=peak_width)
-    downs, _ = find_peaks(-hist, distance=discrete, width=1)
+    downs, _ = find_peaks(-hist, distance=discrete, width=2)
     downs = np.append([0], downs)
     if plot:
         plt.plot(bins, hist)
@@ -138,15 +138,7 @@ class QStatisticsMaker:
 
     # Reading information from the file
     def _extract_data(self, skiprows):
-        bins, hist = np.loadtxt(self.fname, skiprows=skiprows).T
-        delta = bins[1] - bins[0]
-        N = int((bins[0] + 1.5e-11) // delta)
-        hist = np.concatenate((np.zeros(N), hist))
-        bins = np.concatenate(
-            (bins[0] - np.arange(N + 1, 1, -1) * delta, bins))
-
-        self.hist = hist
-        self.bins = bins
+        self.bins, self.hist = np.loadtxt(self.fname, skiprows=skiprows).T
         self.points_discrete = int(self.photon_discrete /
                                    (self.bins[1] - self.bins[0]))
 

@@ -10,6 +10,7 @@ from scipy.special import gamma
 
 
 # ========================= PHOTOCOUNTING STATISTICS ==========================
+@np.vectorize
 def qthermal_unpolarized(m, mean, M):
     """ Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0 """
     return sum(gamma(m - k + M) / (gamma(m - k + 1) * gamma(M)) *

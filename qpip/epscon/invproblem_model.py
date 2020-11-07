@@ -171,7 +171,7 @@ class InvPBaseModel(ConcreteModel):
         Fix to 0 every odd photon-number.
         The default is False and ignored.
     is_zero_n : numpy.ndarray or list or tuple, optional
-        Fix to zero all photon-number stored in iterable.
+        Fix to zero photon-number statistics for all photon-number stored in iterable.
         The default is 0 and ignored.
     mtype : {'binomial', 'subbinomial'}, optional
         Type of the detector: ideal is binomial, realistic is subbinomial,

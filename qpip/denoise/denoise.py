@@ -169,11 +169,9 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
 
     """
     if g2(dnmodel.P) < 1:
-        warn('g2 of the given distribution is less than 1. Algorithm can not be used',
+        warn('g2 of the given distribution is less than 1. Algorithm can not use g2 and mean bounds.',
              RuntimeWarning, __file__, 171)
-        return OptimizeResult(x=[],
-            status=('nosolve', 'g2 of the given distribution is less than 1. Algorithm can not be used'))
-
+ 
     if solver is None:
         solver = SolverFactory('ipopt', solver_io="nl")
 

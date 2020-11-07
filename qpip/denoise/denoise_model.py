@@ -9,7 +9,7 @@ from .._numpy_core import moment, g2, fact, DPREC
 import numpy as np
 from pyomo.core.expr.numvalue import RegisterNumericType
 from pyomo.environ import (ConcreteModel, Expression, RangeSet,
-                           Var, Param, Constraint,
+                           Var, Param, Constraint, Set,
                            exp, log, quicksum)
 from pyomo.dae.plugins.colloc import conv
 
@@ -67,6 +67,9 @@ class DenoisePBaseModel(ConcreteModel):
         Noised distribution.
     M : int
         Length of noise distribution.
+    is_zero_n : numpy.ndarray or list or tuple, optional
+        Fix to zero noise distribution for all photon-number stored in iterable.
+        The default is 0 and ignored.
 
     Variables
     ---------
@@ -84,7 +87,7 @@ class DenoisePBaseModel(ConcreteModel):
 
     """
 
-    def __init__(self, P, M):
+    def __init__(self, P, M, is_zero_n=0):
         super().__init__()
 
         assert type(P) == np.ndarray
@@ -100,6 +103,10 @@ class DenoisePBaseModel(ConcreteModel):
         self.P = Param(self.PSET, initialize=dict(enumerate(P)))
         self.p_noise = Var(self.NSET, initialize=dict(enumerate(init_noise)),
                            bounds=(0, 1))
+        if is_zero_n:
+            for n in is_zero_n:
+                self.p_noise[n].fix(0)
+            self.NZSET = self.NSET - Set(initialize=is_zero_n)
 
         self.noise_mean = Expression(rule=e_noisemean)
         self.noise_g2 = Expression(rule=e_noiseg2)
