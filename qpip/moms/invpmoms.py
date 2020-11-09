@@ -67,8 +67,8 @@ def bvandermonde(nmax, K):
     return np.array([[binom(n, k) for n in range(nmax)] for k in range(K)])
 
 
-def convandermonde(nmax, z, K):
-    return np.array([[z ** (n - k) * binom(n, k) for n in range(nmax)] for k in range(K)])
+def convandermonde(nmax, z, qe, K):
+    return np.array([[(1 - qe + qe * z) ** (n - k) * binom(n, k) for n in range(nmax)] for k in range(K)])
 
 
 # ================== MATRICES TO COMPUTE P =======================
@@ -94,7 +94,7 @@ def bmrec_matrices(qe, mmax, nmax, K):
 # ================= COMPUTE MOMENTS =======================
 def convmoms(Q, qe, z, max_order):
     B = np.array([[
-        DPREC(z ** (i - s) * qe) ** -s * binom(i, s) if i >= s else 0 for i in lrange(Q)]
+        DPREC(qe ** -s * z ** (i - s) * binom(i, s)) if i >= s else 0 for i in lrange(Q)]
         for s in range(max_order)], dtype=DPREC)
     return B.dot(Q)
 
@@ -163,7 +163,7 @@ def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
     mmax = len(Q)
     if nmax == 0:
         nmax = mmax
-    W = convandermonde(nmax, z, max_order)
+    W = convandermonde(nmax, z, qe, max_order)
     moms = convmoms(Q, qe, z, max_order)
     W, moms = precond_moms(W, moms)
     P = lstsq(W, moms)[0]
