@@ -24,8 +24,9 @@ from scipy.optimize import linprog
 from more_itertools import random_combination
 # from joblib import Parallel, delayed
 
-from .invpmoms import bmrec_matrices, mrec_matrices, central_moments
+from .invpmoms import bmrec_matrices, mrec_matrices, central_moments, convmoms, convandermonde, precond_moms
 from .staterr import covm_mltnomial, covm_transform
+from .._numpy_core import normalize
 
 sel = np.select
 
@@ -269,12 +270,7 @@ def linsolve(r, W, moms, sense):
                   method='revised simplex',
                   options={'rr': 0, 'autoscale': 1})
     Pb = res.x
-    # optbasis = np.sort(np.argsort(Pb)[-len(moms):])
-    # c = c[optbasis]
-    # W = W[:, optbasis]
-    # res = linprog(c, A_eq=W, b_eq=moms, bounds=(0, 1))
-    # Pb = res.x
-    return Pb / sum(Pb)
+    return normalize(Pb)
 
 
 def atom_bound(n, W, moms, sense, nmax, method):
@@ -306,6 +302,15 @@ def pn_topbound(Q, qe, nmax, K, method='linsolve'):
     W = np.array([w / np.max(W, axis=1) for w in W.T]).T
     moms = moms / wmax
 
+    bound = [atom_bound(n, W, moms, -1, nmax, method) for n in range(nmax)]
+    return bound
+
+
+def convpn_topbound(Q, qe, z, nmax, K, method='linsolve'):
+    mmax = len(Q)
+    W = convandermonde(nmax, z, qe, K)
+    moms = convmoms(Q, qe, z, K)
+    #W, moms = precond_moms(W, moms)
     bound = [atom_bound(n, W, moms, -1, nmax, method) for n in range(nmax)]
     return bound
 
