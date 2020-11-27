@@ -40,7 +40,7 @@ def cmoms_matrix(max_order, C):
 
 def central_moments(moms, C=None):
     """
-    https://mathworld.wolfram.com/Centralnmaxoment.html
+    https://mathworld.wolfram.com/CentralMoment.html
 
     Parameters
     ----------
@@ -181,7 +181,7 @@ def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
     W = convandermonde(nmax, z, qe, max_order)
     moms = convmoms(Q, qe, z, max_order)
     W, moms = precond_moms(W, moms)
-    P = pinv(W).dot(moms)
+    P = lstsq(W, moms)[0]
     return normalize(P)
 
 

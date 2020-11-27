@@ -7,9 +7,10 @@ Created on Fri Sep 11 21:38:13 2020
 Основные сущности для анализа ошибок
 """
 import numpy as np
+from scipy.special import binom
 
-from .invpmoms import mrec_matrices, central_moments
-
+from .invpmoms import convandermonde
+from .. import lrange, DPREC
 
 def covm_mltnomial(success_prob_distr, meas_num):
     d = success_prob_distr
@@ -18,9 +19,9 @@ def covm_mltnomial(success_prob_distr, meas_num):
     for i in range(N):
         for j in range(N):
             if i != j:
-                covm[i, j] = - d[i] * d[j] / meas_num
+                covm[i, j] = - d[i] * d[j] / DPREC(meas_num)
             else:
-                covm[i, i] = d[i] * (1 - d[j]) / meas_num
+                covm[i, i] = d[i] * (1 - d[j]) / DPREC(meas_num)
     return covm
 
 
@@ -29,16 +30,16 @@ def covm_transform(cov_matrix, transform_matrix):
                   np.transpose(transform_matrix))
 
 
-def covm_moments_anlt(Q, p, N, M, K):
-    sigma = np.zeros((K, K))
-    F, Mm, _ = mrec_matrices(p, M, K)
-    T = Mm.dot(F)
-    for k in range(K):
-        for l in range(K):
-            if k == l:
-                sigma[k, k] = (sum(Q[m]*(1 - Q[m])*T[k, m]**2 for m in range(M)) -
-                               sum(sum(Q[m]*Q[s]*T[k, m]*T[k, s] for m in range(M)) for s in range(M)))/N
-            else:
-                sigma[k, l] = (sum(Q[m]*(1 - Q[m])*T[k, m]*T[l, m] for m in range(M)) -
-                               sum(sum(Q[m]*Q[s]*T[k, m]*T[l, s] for m in range(M)) for s in range(M)))/N
-    return sigma
+def covm_convmoms(Q, qe, z, N0, max_order):
+    convm = covm_mltnomial(Q, N0)
+    T = np.array([[
+        DPREC(qe ** -s * z ** (i - s) * binom(i, s)) if i >= s else 0 for i in lrange(Q)]
+        for s in range(max_order)], dtype=DPREC)
+    return covm_transform(convm, T)
+
+
+def covm_conv_pn(Q, qe, z, N0, nmax, max_order):
+    convm = covm_convmoms(Q, qe, z, N0, max_order)
+    T = np.linalg.pinv(convandermonde(nmax, z, qe, max_order))
+    return covm_transform(convm, T).astype(DPREC)
+    
