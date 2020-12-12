@@ -184,6 +184,25 @@ def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
     P = lstsq(W, moms)[0]
     return normalize(P)
 
+def convmrec_pn2(Q, qe, zz, nmax=0, max_order=2):
+    mmax = len(Q)
+    if nmax == 0:
+        nmax = mmax
+        
+    momsz = []
+    Wz = []
+    for z in zz:
+        W = convandermonde(nmax, z, qe, max_order)
+        moms = convmoms(Q, qe, z, max_order)
+        #W, moms = precond_moms(W, moms)
+        Wz.append(W)
+        momsz.append(moms)
+    W = np.concatenate(Wz)
+    print(Wz, W)
+    moms = np.concatenate(momsz)
+    P = lstsq(W, moms)[0]
+    return normalize(P)
+
 
 def mrec_maxent_pn(Q, qe, nmax=0, max_order=2):
     mmax = len(Q)

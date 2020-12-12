@@ -7,7 +7,7 @@ Created on Sun Aug 23 23:36:57 2020
 import __init__
 from qpip.moms import *
 from qpip.stat import pthermal, psqueezed_vacuumM, ppoisson, pfock
-from qpip import P2Q, normalize, fidelity
+from qpip import P2Q, Q2P, normalize, fidelity, entropy
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -34,49 +34,37 @@ def make_qmodel(P, qe, mtype='binomial', n_cells=0, M=0, N0=int(1e6), ERR=0):
 
 
 mean = 4
-MO = 8
-N = 60
-qe = 0.7
+MO = 7
+N = 40
+qe = 0.3
 
 #P = psqueezed_vacuumM(N, 2, 1.5, 0)
-P = normalize(ppoisson(1, N) + ppoisson(7, N))
+#P = normalize(ppoisson(1, N) + ppoisson(7, N))
 #P = pfock(4, N)
-#P = pthermal(1.5, N)
-#P = ppoisson(5, N)
-Q, Q1 = make_qmodel(P, qe, M=N, N0=100000)
-#Q[65:] = 0
-#Q[:10] = 0
-qe_list = np.arange(0.1, 1.05, 0.1)
-iP = mrec_pn(Q1, qe, max_order=MO)
-bP = bmrec_pn(Q1, qe, max_order=MO)
-z = 0.00001
-cP = convmrec_pn(Q1, qe, z, max_order=MO)
+P = pthermal(3, N)
+P = ppoisson(10, N)
 
-plt.plot(P)
-plt.plot(iP,
-    label='initial moments,\n' + r'$\Delta=%.4f$' % np.linalg.norm(P-iP))
-plt.plot(bP, '--',
-    label='binomial moments,\n' + r'$\Delta=%.4f$' % np.linalg.norm(P-bP))
-plt.plot(cP,
-    label='convergent moments,\nz=%.1e, ' % z + r'$\Delta=%.4f$' % np.linalg.norm(P-cP))
+qe_list = np.arange(0.1, 1.05, 0.1)
+mpfids = []
+cpfids = []
+for qe in qe_list:
+    #iP = mrec_pn(Q1, qe, max_order=MO)
+    Q, Q1 = make_qmodel(P, qe, M=N, N0=int(1E6))
+    #bP = bmrec_pn(Q1, qe, max_order=MO)
+    mP = Q2P(Q1, qe)
+    z = 0.5
+    cP = convmrec_pn(Q1, qe, z, max_order=MO)
+    cpfids.append(fidelity(cP,P))
+    mpfids.append(fidelity(mP,P))
+
+#plt.plot(P)
+#plt.plot(iP,
+#    label='initial moments,\n' + r'$\Delta=%.4f$' % np.linalg.norm(P-iP))
+#plt.plot(bP, '--',
+#    label='binomial moments,\n' + r'$\Delta=%.4f$' % np.linalg.norm(P-bP))
+#plt.plot(cP,
+#    label='convergent moments,\nz=%.1e, ' % z + r'$\Delta=%.4f$' % np.linalg.norm(P-cP))
+plt.semilogy(qe_list, mpfids)
+plt.plot(qe_list, cpfids)
 plt.legend(frameon=0)
 plt.show()
-
-# plt.semilogy(qe_list, [np.linalg.norm(np.array(mrec_pn(Q1, qe, max_order=MO), dtype=np.float)
-#                                      - ss.correct_poisson(mean / qe, N, dtype=float)) for qe in qe_list])
-"""
-K = 9
-plt.semilogy(SM_maximums(25,K), 'o--', label='N=25')
-#plt.semilogy(np.exp(-np.arange(0,K+1,1)**2*0.2367) * 1.451)
-plt.semilogy(SM_maximums(50,K), 's--', label='N=50')
-#plt.semilogy(np.exp(-np.arange(0,K+1,1)**2*0.2974) * 0.07252)
-plt.semilogy(SM_maximums(100,K), 'd--', label='N=100')
-#plt.semilogy(np.exp(-np.arange(0,K+1,1)**2*0.325) * 3e-04)
-
-plt.xlabel('s', fontsize=14)
-plt.ylabel(r'$\max |S^{+}\cdot M|_{ns}$')
-plt.legend(frameon=False)
-plt.savefig('./img/max_sm.eps', dpi=300)
-
-plt.show()
-"""

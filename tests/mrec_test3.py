@@ -29,16 +29,16 @@ def dispsum(Q, qe, z, N0, N, max_order):
     return np.diag(covm_convmoms(Q, qe, z, N0, max_order))
 
 
-max_order = 10
+max_order = 11
 N = 25
 qe = 0.3
-N0 = 10**20
+N0 = 10**8
    
 P = normalize(ppoisson(1, N) + ppoisson(7, N) + ppoisson(17, N))
-P = ppoisson(9, N)
+#P = ppoisson(9, N)
 #P = pthermal(2, N)
 Q = P2Q(P, qe)
-#_, Q = make_qmodel(P, qe, N0=N0)
+_, Q = make_qmodel(P, qe, N0=N0)
 zlist = 10. ** np.arange(-10, 0, 0.1)
 errs = []
 disps = []
@@ -51,7 +51,9 @@ plt.loglog(zlist, errs)
 plt.loglog(zlist, disps)
 plt.show()
 
+zz = [0.0001, 0.1, 0.5]
 cP = convmrec_pn(Q, qe, zlist[np.argmin(disps)], max_order=max_order)
+cP2 = convmrec_pn2(Q, qe, zz, max_order=max_order)
 d = np.diag(covm_conv_pn(Q, qe, zlist[np.argmin(disps)], N0, N, max_order)) ** 0.5
 dP = Q2P(Q, qe)
 d2 = covm_transform(covm_mltnomial(Q, N0), invt_matrix(qe, N, len(Q)))
