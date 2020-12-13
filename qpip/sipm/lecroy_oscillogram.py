@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from scipy.signal import find_peaks
 
 import lecroyparser
+import tekwfm as tek
+
 from scipy.sparse.linalg import spsolve
 from scipy import sparse
 import numpy as np
@@ -21,25 +23,33 @@ from joblib import Parallel, delayed
 gc.enable()
 
 
-def parse_file(datafile):
-    data = lecroyparser.ScopeData(datafile)
-    delattr(data, "file")
+def parse_file(datafile, vendor):
+    if vendor == 'lecroy':
+        data = lecroyparser.ScopeData(datafile)
+        delattr(data, "file")
+    if vendor == 'tek':
+        data = tek.ScopeData(datafile)
     return data
 
 
 def list_files(datadir, fsoffset, fsnum):
-    return [join(datadir, f) for f in listdir(datadir)
-            if isfile(join(datadir, f)) and f.endswith('.trc')][fsoffset:fsoffset+fsnum]
+    lf = [join(datadir, f) for f in listdir(datadir)
+            if isfile(join(datadir, f))]
+    if fsoffset != 0:
+        lf = lf[fsoffset:]
+    if fsnum > 0:
+        lf = lf[:fsnum]
+    return lf
 
 
-def parse_files(trc_files, fsnum=0, parallel=False):
+def parse_files(oscfiles, vendor, fsnum=0, parallel=False):
 
     if fsnum > 0:
-        trc_files = trc_files[:fsnum]
+        oscfiles = oscfiles[:fsnum]
     if parallel:
-        data = Parallel(n_jobs=-1)([delayed(parse_file)(df) for df in trc_files])
+        data = Parallel(n_jobs=-1)([delayed(parse_file)(df, vendor) for df in oscfiles])
     else:
-        data = [parse_file(df) for df in trc_files]
+        data = [parse_file(df, vendor) for df in oscfiles]
     return data
 
 
@@ -105,6 +115,7 @@ def periodic_pulse(data, frequency, time_window, discrete, method='max'):
     points_period = int(1 / frequency / data.horizInterval) + 1
     points_window = int(time_window / data.horizInterval) + 1
     y = data.y    
+    print(points_period, points_window, y)
     init_point = np.argmax(y)
     pulses_points = np.append(
             np.arange(init_point, 0, -points_period)[::-1],
@@ -120,13 +131,13 @@ def periodic_pulse(data, frequency, time_window, discrete, method='max'):
     return discretedata
 
 
-def memo_oscillogram(data, correct_bs=True):
+def memo_oscillogram(data, vendor, correct_bs=True):
     if type(data) is str:
-        filedata = (data, parse_file(data))
+        filedata = (data, parse_file(data, vendor))
     if type(data) == tuple:
-        if type(data[1]) == lecroyparser.ScopeData:
+        if type(data[1]) is not str:
             return filedata
-        filedata = (data[0], parse_file(data[0]))
+        filedata = (data[0], parse_file(data[0], vendor))
         filedata[1].y = data[1]
         return filedata
 
@@ -141,8 +152,8 @@ def memo_oscillogram(data, correct_bs=True):
 @dataclass
 class PulsesHistMaker:
     datadir: str
-    method: str
-    discrete: float
+    method: str = 'max'
+    discrete: float = 1
     fsnum: int = -1
     fsoffset: int = 0
     fchunksize: int = 10
@@ -151,14 +162,21 @@ class PulsesHistMaker:
     memo_file: str = ''
     histbins: int = 2000
     correct_baseline: bool = True
+    vendor : str = 'lecroy'
+    
+    methods : tuple = ('max', 'counts')
+    vendors : tuple = ('lecroy', 'tek')
 
     def __post_init__(self):
         if not self.parallel:
             self.parallel_jobs = 1
-        if self.method not in ('max', 'counts'):
-            raise ValueError('method must be "max" or "counts", not %s' %
-                             self.method)
-
+        if self.method not in self.methods:
+            raise ValueError('method must be in %s, not %s' %
+                             (self.methods, self.method))
+        if self.vendor not in self.vendors:
+            raise ValueError('vendor must be in %s, not %s' %
+                             (self.vendors, self.vendor))
+            
     def read(self, fsnum=-1, parallel_read=False):
         if fsnum == -1:
             fsnum = self.fsnum
@@ -213,7 +231,7 @@ class PulsesHistMaker:
             t = time.time()
             hb = min(i + self.fchunksize, self.filesnum)
             self.rawdata[i:hb] = Parallel(n_jobs=self.parallel_jobs)([
-                delayed(memo_oscillogram)(df, self.correct_baseline) for df in self.rawdata[i:hb]])
+                delayed(memo_oscillogram)(df, self.vendor, self.correct_baseline) for df in self.rawdata[i:hb]])
             pulsesdata = [func(df[1], *args) for df in self.rawdata[i:hb]]
             discretedata += pulsesdata
             
