@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from scipy.signal import find_peaks
 
 import lecroyparser
-import tekwfm as tek
+from . import tekwfm as tek
 
 from scipy.sparse.linalg import spsolve
 from scipy import sparse
@@ -115,7 +115,6 @@ def periodic_pulse(data, frequency, time_window, discrete, method='max'):
     points_period = int(1 / frequency / data.horizInterval) + 1
     points_window = int(time_window / data.horizInterval) + 1
     y = data.y    
-    print(points_period, points_window, y)
     init_point = np.argmax(y)
     pulses_points = np.append(
             np.arange(init_point, 0, -points_period)[::-1],

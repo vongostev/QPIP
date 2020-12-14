@@ -91,15 +91,16 @@ def hist2Q(hist, bins, discrete, threshold=1, peak_width=1, plot=False, method='
                     Q.append(sum(hist[dl:dt]))
                 if method == 'fit':
                     res = minimize(minpoly, args=(bins[dl:dt], hist[dl:dt]), tol=1e-16,
-                                   x0=(1, bins[p], np.sqrt(bins[p]), 0.01, 0.01),
-                                   bounds=list(zip([1, bins[dl], bins[1] - bins[0], -1, -1], 
-                                                   [hist[p], bins[dt], bins[dt] - bins[dl], 1, 1])))
+                                   x0=(1, bins[p], bins[1] - bins[0], 0.01, 0.01),
+                                   bounds=list(zip([1, bins[dl], bins[1] - bins[0], -0.01, -0.01], 
+                                                   [hist[p], bins[dt], np.sqrt(bins[dt] - bins[dl]), 0.01, 0.01])))
                     popt = res.x
                     Q.append(peak_area(*popt))
                     if plot:
-                        plt.plot(bins[dl:dt], hist[dl:dt])
-                        plt.plot(bins[dl:dt], np.vectorize(gauss_hermite_poly)(bins[dl:dt], *popt))
-    if plot and method == 'fit': plt.show()
+                        #plt.plot(bins[dl:dt], hist[dl:dt])
+                        plt.plot(bins, np.vectorize(gauss_hermite_poly)(bins, *popt))
+    if plot and method == 'fit': 
+        plt.show()
     return normalize(Q)
 
 
@@ -138,7 +139,14 @@ class QStatisticsMaker:
 
     # Reading information from the file
     def _extract_data(self, skiprows):
-        self.bins, self.hist = np.loadtxt(self.fname, skiprows=skiprows).T
+        try:
+            self.bins, self.hist = np.loadtxt(self.fname, skiprows=skiprows).T
+        except:
+            self.bins, self.hist = np.loadtxt(self.fname, skiprows=skiprows, 
+                                              delimiter=',').T
+        if self.bins[1] - self.bins[0] < 0:
+            self.bins = self.bins[::-1]
+            self.hist = self.hist[::-1]
         self.points_discrete = int(self.photon_discrete /
                                    (self.bins[1] - self.bins[0]))
 
