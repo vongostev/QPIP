@@ -129,3 +129,6 @@ dmypy.json
 *.eps
 *.jpg
 *.ai
+
+*.wfm
+*.csv
