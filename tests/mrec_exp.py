@@ -13,60 +13,47 @@ import numpy as np
 sys.path.append(os.path.abspath('../..'))
 
 from oscsipm.oscsipm import hist2Q, QStatisticsMaker, compensate
-from qpip import g2, normalize, lrange
+from qpip import g2, normalize, lrange, Q2P
 import matplotlib.pyplot as plt
-from qpip.moms import convmrec_pn, covm_mltnomial, covm_conv_pn
+from qpip.moms import Q2PCM, covm_mltnomial, covm_conv_pn
 
-qm = QStatisticsMaker("15122020/01_2kHz_0.83V_ampl9V_pinhole.csv", 0.002, plot=1, peak_width=1.1, method='fit')
+plt.style.use('bmh')
 
-sigma = np.diag(covm_mltnomial(qm.getq(), sum(qm.hist))) ** 0.5
-q0 = normalize(qm.getq()[:5])
-plt.errorbar(lrange(q0), q0, yerr=3 * sigma[:len(q0)], capsize=5, label="g2(Q) = %.2f" % g2(q0))
 
-# q = compensate(q0, 0.026)
-# sigma = np.diag(covm_mltnomial(q, sum(qm.hist))) ** 0.5
-# plt.errorbar(lrange(q), q, yerr=3 * sigma[:len(q)], capsize=5)
+def makeq(path, qe, pct, N, max_order):
+    qm = QStatisticsMaker(path, 0.017, plot=1, peak_width=1, method='fit')
+    
+    q0 = normalize(qm.getq())
+    qsigma0 = np.diag(covm_mltnomial(q0, sum(qm.hist))) ** 0.5
+    q = compensate(q0, pct)
+    qsigma = np.diag(covm_mltnomial(q, sum(qm.hist))) ** 0.5
+    
+    p, zopt = Q2PCM(q, qe, N, max_order)
+    psigma = np.diag(covm_conv_pn(q, qe, zopt, sum(qm.hist), N, max_order)) ** 0.5
+    
+    plt.errorbar(lrange(q0), q0, yerr=3 * qsigma0[:len(q0)], capsize=5, 
+                 label=r"$g_2(Q_{exp}) = %.2f$" % g2(q0))
+    plt.errorbar(lrange(q), q, yerr=3 * qsigma[:len(q)], capsize=5, 
+                 label=r"$g_2(Q_{dn}) = %.2f$" % g2(q))
+    plt.errorbar(lrange(p), p, yerr=3 * psigma[:len(p)], capsize=5, 
+                 label=r"$g_2(P) = %.2f$" % g2(p))
+    #plt.plot(Q2P(q0, qe))
+    plt.legend(frameon=0, fontsize=14)
+    plt.xlabel('Number of photons / photocounts', fontsize=14)
+    plt.ylabel('Probability', fontsize=14)
+    #plt.xscale('symlog')
+    plt.show()
+    print(sum(qm.hist), zopt)
+    return q0, q, p
 
-p = convmrec_pn(q0, 0.55, 0.1, 10, 5)
-sigmap = np.diag(covm_conv_pn(q0, 0.55, 0.1, sum(qm.hist), 10, 5)) ** 0.5
-plt.errorbar(lrange(p), p, yerr=3 * sigmap[:len(p)], capsize=5, label="g2(P) = %.2f" % g2(p))
-plt.legend(frameon=0)
-plt.xlabel('Number of photons / photocounts')
-plt.ylabel('Probability')
-plt.show()
 
-qmt = QStatisticsMaker("15122020/01_2kHz_0.83V_ampl9V_pinhole_disk5.csv", 0.002, plot=1, peak_width=1.1, method='fit')
+qe = 0.46
+# Crosstalk probability
+# Based on data from 16122020/01_5kHz_0.81V_ampl10V.csv
+# Total crosstalk probability 0.05828426959386601
+pct = 0.01490082301594439
+N = 11
 
-sigma = np.diag(covm_mltnomial(qmt.getq(), sum(qmt.hist))) ** 0.5
-q0 = normalize(qmt.getq()[:5])
-plt.errorbar(lrange(q0), q0, yerr=3 * sigma[:len(q0)], capsize=5, label="g2(Q) = %.2f" % g2(q0))
-
-# q = compensate(q0, 0.026)
-# sigma = np.diag(covm_mltnomial(q, sum(qm.hist))) ** 0.5
-# plt.errorbar(lrange(q), q, yerr=3 * sigma[:len(q)], capsize=5)
-
-p = convmrec_pn(q0, 0.55, 0.1, 10, 5)
-sigmap = np.diag(covm_conv_pn(q0, 0.55, 0.1, sum(qmt.hist), 10, 5)) ** 0.5
-plt.errorbar(lrange(p), p, yerr=3 * sigmap[:len(p)], capsize=5, label="g2(P) = %.2f" % g2(p))
-plt.legend(frameon=0)
-plt.xlabel('Number of photons / photocounts')
-plt.ylabel('Probability')
-plt.show()
-
-qmp = QStatisticsMaker("15122020/02_2kHz_0.83V_ampl9V_pinhole_disk5_3.csv", 0.002, plot=1, peak_width=1.1, method='fit')
-
-sigma = np.diag(covm_mltnomial(qmp.getq(), sum(qmp.hist))) ** 0.5
-q0 = normalize(qmp.getq()[:10])
-plt.errorbar(lrange(q0), q0, yerr=3 * sigma[:len(q0)], capsize=5, label="g2(Q) = %.2f" % g2(q0))
-
-# q = compensate(q0, 0.026)
-# sigma = np.diag(covm_mltnomial(q, sum(qm.hist))) ** 0.5
-# plt.errorbar(lrange(q), q, yerr=3 * sigma[:len(q)], capsize=5)
-
-p = convmrec_pn(q0, 0.55, 0.2, 20, 4)
-sigmap = np.diag(covm_conv_pn(q0, 0.55, 0.2, sum(qmp.hist), 20, 4)) ** 0.5
-plt.errorbar(lrange(p), p, yerr=3 * sigmap[:len(p)], capsize=5, label="g2(P) = %.2f" % g2(p))
-plt.legend(frameon=0)
-plt.xlabel('Number of photons / photocounts')
-plt.ylabel('Probability')
-plt.show()
+#q0, q, p = makeq("16122020/01_5kHz_0.81V_ampl10V_diskstop.csv", qe, pct, 11, 6)
+#q0, q, p = makeq("16122020/01_5kHz_0.81V_ampl10V.csv", qe, pct, 15, 5)
+q0, q, p = makeq("16122020/01_5kHz_0.81V_ampl10V_H.csv", qe, pct, 31, 7)

@@ -46,5 +46,5 @@ for f, q, z in zip(cpfids, qe_list, z_list):
 plt.legend(frameon=False)
 plt.xlabel('Число моментов')
 plt.ylabel('Достоверность')
-plt.title('Восстановление теплового распределения')
+#plt.title('Восстановление теплового распределения')
 plt.show()

@@ -185,6 +185,14 @@ def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
     return normalize(P)
 
 
+def Q2PCM(Q, qe, nmax=0, max_order=2):
+    zopt = np.arange(0, 1, 1e-3)[
+        np.argmax([
+            (sum(x for x in convmrec_pn(Q, qe, z, nmax, max_order) if x < 0))
+            for z in np.arange(0, 1, 1e-3)])]
+    return convmrec_pn(Q, qe, zopt, nmax, max_order), zopt
+
+
 def mrec_maxent_pn(Q, qe, nmax=0, max_order=2):
     mmax = len(Q)
     if nmax == 0:
