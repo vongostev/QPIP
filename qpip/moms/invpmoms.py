@@ -10,6 +10,7 @@ from sympy.functions.combinatorial.numbers import stirling
 # from sympy.functions.combinatorial.factorials import factorial
 from scipy.special import binom
 from scipy.linalg import pinv, lstsq
+from scipy.optimize import minimize_scalar
 
 from .pymaxent import reconstruct
 from .._numpy_core import fact, DPREC, normalize, lrange
@@ -147,11 +148,13 @@ def fmatrix(qe, z, nmax, max_order):
     nk = nmax - max_order
     for i in range(max_order):
         for n in range(max_order):
-            F[i, n] = sum((-1) ** n * ( 1 - qe + qe * z) ** (nk + i - k) *\
+            F[i, n] = sum((-1) ** n * (1 - qe + qe * z) ** (nk + i - k) *
                           binom(k, n) * binom(nk + i, k) for k in range(max_order, nmax))
     return F
 
 # ====================== SOLVERS ==========================
+
+
 def mrec_pn(Q, qe, nmax=0, max_order=2):
     mmax = len(Q)
     if nmax == 0:
@@ -181,15 +184,16 @@ def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
     W = convandermonde(nmax, z, qe, max_order)
     moms = convmoms(Q, qe, z, max_order)
     W, moms = precond_moms(W, moms)
-    P = lstsq(W, moms)[0]
-    return normalize(P)
+    return lstsq(W, moms)[0]
 
 
 def Q2PCM(Q, qe, nmax=0, max_order=2):
-    zopt = np.arange(0, 1, 1e-3)[
-        np.argmax([
-            (sum(x for x in convmrec_pn(Q, qe, z, nmax, max_order) if x < 0))
-            for z in np.arange(0, 1, 1e-3)])]
+    res = minimize_scalar(
+        lambda z: -sum(x for x in convmrec_pn(Q, qe,
+                                              z, nmax, max_order) if x < 0),
+        bounds=(0, 1), method='Bounded')
+    print(res)
+    zopt = res.x
     return convmrec_pn(Q, qe, zopt, nmax, max_order), zopt
 
 

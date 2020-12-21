@@ -28,7 +28,7 @@ P = pthermal(4, N)
 #P = ppoisson(10, N)
 
 qe_list = [0.1, 0.3, 0.6, 0.9]
-z_list  = [0.001, 0.01, 0.45, 0.7]
+z_list = [0.001, 0.01, 0.45, 0.7]
 #z_list  = [0.001, 0.7, 0.3, 0.5]
 mo_list = np.arange(4, 15)
 mpfids = []
@@ -38,7 +38,7 @@ for z, qe in zip(z_list, qe_list):
     cpfids.append([])
     for MO in mo_list:
         cP = convmrec_pn(Q, qe, z, max_order=MO)
-        cpfids[-1].append(fidelity(cP,P))
+        cpfids[-1].append(fidelity(cP, P))
 
 cpfids = np.array(cpfids)
 for f, q, z in zip(cpfids, qe_list, z_list):
