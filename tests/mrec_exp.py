@@ -10,7 +10,7 @@ import __init__
 from qpip.moms import Q2PCM, covm_mltnomial, covm_conv_pn
 import matplotlib.pyplot as plt
 from qpip import g2, normalize, lrange, Q2P
-from oscsipm.oscsipm import hist2Q, QStatisticsMaker, compensate
+from oscsipm import hist2Q, QStatisticsMaker, compensate
 
 import numpy as np
 
