@@ -130,11 +130,11 @@ def step_solve(epsilon, model, solver, y_vars, x_var):
         List of y_vars values.
 
     """
+    solve_flag = 1
 
     try:
         P = P1(epsilon, model, y_vars)
         solver.solve(P, tee=0)
-        solve_flag = 1
     except Exception as E:
         error('epsilon = %s. Error in P: %s' % (epsilon, E))
         solve_flag = 0
@@ -143,7 +143,6 @@ def step_solve(epsilon, model, solver, y_vars, x_var):
         z_optimal = value(getattr(model, y_vars[0]))
         Q = Q1(epsilon, z_optimal, model, y_vars)
         solver.solve(Q, tee=0)
-        solve_flag = 1
     except Exception as E:
         error('epsilon = %s. Error in Q: %s' % (epsilon, E))
         solve_flag = 0
