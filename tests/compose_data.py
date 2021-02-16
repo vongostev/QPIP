@@ -11,7 +11,7 @@ from qpip.moms import Q2PCM, convmrec_pn
 from qpip.epscon import invpopt, InvPBaseModel
 import cdata_plotter as cdp
 from qpip.stat import psqueezed_coherent1, psqueezed_vacuumM, ppoisson, pthermal
-from oscsipm.oscsipm import QStatisticsMaker, optimize_pcrosstalk, compensate
+from oscsipm.oscsipm import QStatisticsMaker, find_pcrosstalk, compensate
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
@@ -65,13 +65,13 @@ QE_T = 0.12  # 812 nm
 QE_M = 0.15  # 660 nm
 QE = [0.3, QE_M, QE_T, 0.36, 0.26][EXP]
 
-ADJ_CROSSTALK = False
+ADJ_CROSSTALK = 1
 DISPLAY_ERR = False
 HIST_METHOD = ['fit', 'sum', 'manual'][2]
 
 # Parameters of photodetection
 MTYPE = 'binomial'
-N_CELLS = 667
+N_CELLS = 1667
 
 """ =========== Обработка модельных данных ==============="""
 if EXP == 0:
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     if EXP:
         if ADJ_CROSSTALK:
             #correct_g2 = g2(P2Q(ss.correct_poisson(mean_pme / QE, N), QE)[:M])
-            P_CROSSTALK, _ = optimize_pcrosstalk(pm_exp, QE, N, mtype=MTYPE, n_cells=N_CELLS)
+            P_CROSSTALK, _ = find_pcrosstalk(pm_exp, QE, N, mtype=MTYPE, n_cells=N_CELLS)
         pm_processed = compensate(pm_exp, P_CROSSTALK)
 
         plt.plot(pm_exp)
@@ -257,7 +257,7 @@ if __name__ == "__main__":
     """ ================= Восстановление статистики фотонов ==============="""
 
     #invpmodel = InvPBaseModel(pm_processed, QE, N, mtype=MTYPE, n_cells=N_CELLS)
-    #res = invpopt(invpmodel, eps_tol=1e-7)
+    #res = invpopt(invpmodel, eps_tol=1e-4, disp=True)
     #pn_rec = res.x
     pn_rec, zopt = Q2PCM(pm_processed, QE, 20, 6)
     pm_rec = P2Q(pn_rec, QE, M)
