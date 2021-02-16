@@ -13,7 +13,7 @@ from scipy.linalg import pinv, lstsq
 from scipy.optimize import minimize_scalar
 
 from .pymaxent import reconstruct
-from .._numpy_core import fact, DPREC, normalize, lrange
+from .._numpy_core import fact, DPREC, normalize, lrange, g2, mean
 
 # pinv = np.linalg.pinv
 vec = np.vectorize
@@ -130,10 +130,15 @@ def pn_moms(Q, qe, max_order):
     return S.dot(F).dot(Q)
 
 
-def precond_moms(W, moms):
+def precond_moms(W, moms, Q=None, qe=None):
     wmax = np.max(W, axis=1)
     W = np.array([w / np.max(W, axis=1) for w in W.T]).T
     moms = moms / wmax
+    moms = np.append(moms, 1)
+    W = np.vstack((W, np.ones(W.shape[1])))
+    if Q is not None:
+        moms = np.append(moms, g2(Q))
+        W = np.vstack((W, [((n - 1) * n if n >= 1 else 0) / mean(Q) ** 2 * qe ** 2 for n in range(W.shape[1])]))
     return W, moms
 
 

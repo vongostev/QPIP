@@ -7,11 +7,11 @@ Created on Sat Jun 29 22:27:47 2019
 import os
 import __init__
 from qpip import normalize, P2Q, Q2P, mean, g2, fidelity, p_convolve, entropy
+from qpip.moms import Q2PCM, convmrec_pn
 from qpip.epscon import invpopt, InvPBaseModel
-import qpip.sipm as scc
 import cdata_plotter as cdp
 from qpip.stat import psqueezed_coherent1, psqueezed_vacuumM, ppoisson, pthermal
-from qpip.sipm import QStatisticsMaker, optimize_pcrosstalk, compensate
+from oscsipm.oscsipm import QStatisticsMaker, optimize_pcrosstalk, compensate
 import numpy as np
 import matplotlib.pyplot as plt
 import logging
@@ -42,11 +42,12 @@ pyomolog.setLevel(logging.ERROR)
 info = logger.critical
 
 
-def file2Q(fname, photon_discrete, skiprows=0, peak_width=3.5):
-    pe_signal = QStatisticsMaker(
+def file2Q(fname, photon_discrete, skiprows=0, peak_width=1):
+    qdata = QStatisticsMaker(
         fname, peak_width=peak_width, photon_discrete=photon_discrete, 
-        skiprows=skiprows, plot=1, method='sum').getq()
-    return pe_signal
+        skiprows=skiprows, plot=1, method=HIST_METHOD)
+    print(sum(qdata.hist))
+    return qdata.getq()
 
 
 """============ Управляющие константы ===================="""
@@ -62,11 +63,11 @@ EXP = 4
 # Квантовая эффективность
 QE_T = 0.12  # 812 nm
 QE_M = 0.15  # 660 nm
-QE = [0.3, QE_M, QE_T, 0.36, 0.32][EXP]
+QE = [0.3, QE_M, QE_T, 0.36, 0.26][EXP]
 
 ADJ_CROSSTALK = False
 DISPLAY_ERR = False
-HIST_METHOD = ['fit', 'sum', 'auto'][2]
+HIST_METHOD = ['fit', 'sum', 'manual'][2]
 
 # Parameters of photodetection
 MTYPE = 'binomial'
@@ -146,9 +147,8 @@ if EXP == 1:
     test_data_spdc_noised = os.path.join(
         data_dir, 'F100100_1000_660nm_Stats00000.txt')
 
-    pm_exp = file2Q(test_data_mean0_5,
-                                 PEAK_AREA_LASER['36v'],
-                                 skiprows=1)
+    pm_exp = file2Q(test_data_mean6_9,
+                    PEAK_AREA_LASER['36v'])
     ideal_pn_model = ppoisson(mean(pm_exp) / QE, N)
     pnoise = np.zeros(N)
     
@@ -181,7 +181,7 @@ elif EXP == 4:
     #P_CROSSTALK = 0.008129662598555697
     #P_CROSSTALK = 0.00442979044775124
     #P_CROSSTALK = 0.005260079621802079
-    P_CROSSTALK = 0.00434783902854902 #0.00624033520243927  # Correct
+    P_CROSSTALK = 0.00434783902854902#0.00624033520243927 #  #  # Correct
     P_SUM_CT = 0.03168573186533852
 
     ampl_discrete = 0.03
@@ -256,9 +256,10 @@ if __name__ == "__main__":
 
     """ ================= Восстановление статистики фотонов ==============="""
 
-    invpmodel = InvPBaseModel(pm_processed, QE, N, mtype=MTYPE, n_cells=N_CELLS)
-    res = invpopt(invpmodel, eps_tol=1e-7)
-    pn_rec = res.x
+    #invpmodel = InvPBaseModel(pm_processed, QE, N, mtype=MTYPE, n_cells=N_CELLS)
+    #res = invpopt(invpmodel, eps_tol=1e-7)
+    #pn_rec = res.x
+    pn_rec, zopt = Q2PCM(pm_processed, QE, 20, 6)
     pm_rec = P2Q(pn_rec, QE, M)
     
     if EXP:

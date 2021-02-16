@@ -13,6 +13,8 @@ import matplotlib.pyplot as plt
 from ..epscon._eps_optimization import iterate, info
 from .._numpy_core import lrange, p_convolve, mean, fidelity, g2
 from ..stat import ppoisson, pthermal
+from .denoise_model import DenoisePBaseModel
+
 
 def warn(*args): return  np.warnings.warn_explicit(*args)
 
@@ -227,3 +229,18 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
             plt.show()
 
     return res
+
+
+def pdenoise(P, M, is_zero_n=0,
+            mean_lbound=0, mean_ubound=0,
+            g2_lbound=0, g2_ubound=0,
+            eps_tol=0, solver=None,
+            save_all_nondom_x=False, plot=False,
+            save_all_nondom_y=False, disp=False):
+    dnmodel = DenoisePBaseModel(P, M, is_zero_n)
+    return denoiseopt(dnmodel,
+                      mean_lbound, mean_ubound,
+                      g2_lbound, g2_ubound,
+                      eps_tol, solver,
+                      save_all_nondom_x, plot,
+                      save_all_nondom_y, disp)
