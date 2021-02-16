@@ -11,7 +11,7 @@ from scipy.special import binom
 from scipy.linalg import pinv
 from functools import lru_cache
 
-from ._numpy_core import *
+from ._numpy_core import DPREC
 
 
 def binomial_t_elem(qe: float, n: int, m: int):

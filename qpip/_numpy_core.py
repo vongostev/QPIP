@@ -12,12 +12,17 @@ import functools
 import numpy as np
 from scipy.special import factorial, binom
 
+__all__ = ['compose', 'lrange', 'fact', 'p_convolve', 'moment', 'mean', 'g2',
+           'normalize', 'abssum', 'fidelity', 'entropy']
+
 try:
     DPREC = np.float128
-except:
+except AttributeError:
     DPREC = np.float64
-    np.warnings.warn_explicit("Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.",
-                              RuntimeWarning, __file__, 18)
+    np.warnings.warn_explicit(
+        "Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.",
+        RuntimeWarning, __file__, 19)
+
 
 def compose(*functions):
     def pack(x): return x if type(x) is tuple else (x,)

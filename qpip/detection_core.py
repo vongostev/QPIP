@@ -8,13 +8,9 @@ Created on Fri Oct 02 08:39:31 2019
 Версия алгоритма расчета статистики фотоотсчетов
 на основе numpy.float128
 """
-
 import numpy as np
 
-from scipy.special import binom
-from scipy.linalg import solve
-
-from ._numpy_core import *
+from ._numpy_core import normalize
 from .detection_matrix import binomial_t_matrix, subbinomial_t_matrix
 from .detection_matrix import binomial_invt_matrix, subbinomial_invt_matrix
 
