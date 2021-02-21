@@ -134,7 +134,7 @@ def P2Q(P: np.ndarray, qe: float, M=0, mtype='binomial', n_cells=0):
     N = len(P)
     if M == 0:
         M = N
-    return normalize(t_matrix(qe, N, M, mtype, n_cells).dot(P))
+    return t_matrix(qe, N, M, mtype, n_cells).dot(P)
 
 
 def Q2P(Q: np.ndarray, qe: float, N=0, mtype='binomial', n_cells=0):
@@ -171,4 +171,4 @@ def Q2P(Q: np.ndarray, qe: float, N=0, mtype='binomial', n_cells=0):
         Q = np.concatenate((Q, np.zeros(N - M)))
         M = N
 
-    return normalize(invt_matrix(qe, M, N, mtype, n_cells).dot(Q))
+    return invt_matrix(qe, M, N, mtype, n_cells).dot(Q)

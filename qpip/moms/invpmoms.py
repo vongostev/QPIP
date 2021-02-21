@@ -7,7 +7,6 @@ Created on Tue Apr 14 02:16:22 2020
 
 import numpy as np
 from sympy.functions.combinatorial.numbers import stirling
-# from sympy.functions.combinatorial.factorials import factorial
 from scipy.special import binom
 from scipy.linalg import pinv, lstsq
 from scipy.optimize import minimize_scalar
@@ -134,11 +133,11 @@ def precond_moms(W, moms, Q=None, qe=None):
     wmax = np.max(W, axis=1)
     W = np.array([w / np.max(W, axis=1) for w in W.T]).T
     moms = moms / wmax
-    moms = np.append(moms, 1)
-    W = np.vstack((W, np.ones(W.shape[1])))
-    if Q is not None:
-        moms = np.append(moms, g2(Q))
-        W = np.vstack((W, [((n - 1) * n if n >= 1 else 0) / mean(Q) ** 2 * qe ** 2 for n in range(W.shape[1])]))
+    # moms = np.append(moms, 1)
+    # W = np.vstack((W, np.ones(W.shape[1])))
+    # if Q is not None:
+    #     moms = np.append(moms, g2(Q))
+    #     W = np.vstack((W, [((n - 1) * n if n >= 1 else 0) / mean(Q) ** 2 * qe ** 2 for n in range(W.shape[1])]))
     return W, moms
 
 
@@ -196,8 +195,7 @@ def Q2PCM(Q, qe, nmax=0, max_order=2):
     res = minimize_scalar(
         lambda z: -sum(x for x in convmrec_pn(Q, qe,
                                               z, nmax, max_order) if x < 0),
-        bounds=(0, 1), method='Bounded')
-    print(res)
+        bounds=(-1, 1), method='Bounded')
     zopt = res.x
     return convmrec_pn(Q, qe, zopt, nmax, max_order), zopt
 

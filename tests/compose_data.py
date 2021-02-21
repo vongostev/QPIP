@@ -52,14 +52,14 @@ def file2Q(fname, photon_discrete, skiprows=0, peak_width=1):
 
 """============ Управляющие константы ===================="""
 # Размерность сетки расчета
-N = 20
+N = 100
 # Максимальное число фотоотсчетов для обрезки (моделирование
 # экспериментальной ситуации)
 M = N
 # Ключи использования разных данных
 # Использовать экспериментальные данные? Если ЛОЖЬ, используются модельные
 # данные
-EXP = 4
+EXP = 0
 # Квантовая эффективность
 QE_T = 0.12  # 812 nm
 QE_M = 0.15  # 660 nm
@@ -75,7 +75,7 @@ N_CELLS = 1667
 
 """ =========== Обработка модельных данных ==============="""
 if EXP == 0:
-    N0 = int(1E5)
+    N0 = int(1E6)
     #ideal_pn_model = ss.correct_thermal(4, N)  # [0.8, 0.15, 0.05, 0] #
     # ideal_pn_model = normalize(p_convolve(ss.correct_poisson(12, N),
     #                               ss.hyper_poisson(range(N), 0.6, 4)))
@@ -91,11 +91,10 @@ if EXP == 0:
     #                           normalize(ket2dm(coherent(N, 3) + coherent(N, -3)).diag())])
     #ideal_pn_model = ss.hyper_poisson(range(N), 9, 6.5)
     #ideal_pn_model = ket2dm(psqueezed_coherent1(N, 3, 1)).diag()
-    ideal_pn_model = ppoisson(7, N)
-    ERR = 0.5e-2
+    ideal_pn_model = ppoisson(40, N)
+    ERR = 0e-2
     pm_exp, pm_processed = make_qmodel(
         ideal_pn_model, MTYPE, N_CELLS, qe=QE, M=M, N0=N0, ERR=ERR)
-    #pm_processed[-5:] = 0
     info('M %d' % M)
     #info('H[pn] %f' % entropy(pn_model))
     info('H[pn, ideal] %f' % entropy(ideal_pn_model))
@@ -259,7 +258,7 @@ if __name__ == "__main__":
     #invpmodel = InvPBaseModel(pm_processed, QE, N, mtype=MTYPE, n_cells=N_CELLS)
     #res = invpopt(invpmodel, eps_tol=1e-4, disp=True)
     #pn_rec = res.x
-    pn_rec, zopt = Q2PCM(pm_processed, QE, 20, 6)
+    pn_rec, zopt = Q2PCM(pm_processed, QE, N, 16)
     pm_rec = P2Q(pn_rec, QE, M)
     
     if EXP:
