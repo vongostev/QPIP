@@ -44,7 +44,7 @@ info = logger.critical
 
 def file2Q(fname, photon_discrete, skiprows=0, peak_width=1):
     qdata = QStatisticsMaker(
-        fname, peak_width=peak_width, photon_discrete=photon_discrete, 
+        fname, peak_width=peak_width, photon_discrete=photon_discrete,
         skiprows=skiprows, plot=1, method=HIST_METHOD)
     print(sum(qdata.hist))
     return qdata.getq()
@@ -79,10 +79,10 @@ if EXP == 0:
     #ideal_pn_model = ss.correct_thermal(4, N)  # [0.8, 0.15, 0.05, 0] #
     # ideal_pn_model = normalize(p_convolve(ss.correct_poisson(12, N),
     #                               ss.hyper_poisson(range(N), 0.6, 4)))
-    #pnoise = [1 - 3e-3, 0, 3e-3]#pthermal(1, 10) # 
+    #pnoise = [1 - 3e-3, 0, 3e-3]#pthermal(1, 10) #
     #ideal_pn_model = normalize(np.convolve(ppoisson(0.1, N), pnoise)[:N])
-    #ideal_pn_model = normalize(
-    #    ppoisson(15, N) + ppoisson(5, N))
+    ideal_pn_model = normalize(
+        ppoisson(60, N) + ppoisson(40, N) + ppoisson(20, N))
 
     #ideal_pn_model = squeezed_vacuumM(N, 2, 1.3, 0)
     #ideal_pn_model = np.zeros(N)
@@ -91,7 +91,7 @@ if EXP == 0:
     #                           normalize(ket2dm(coherent(N, 3) + coherent(N, -3)).diag())])
     #ideal_pn_model = ss.hyper_poisson(range(N), 9, 6.5)
     #ideal_pn_model = ket2dm(psqueezed_coherent1(N, 3, 1)).diag()
-    ideal_pn_model = ppoisson(40, N)
+    #ideal_pn_model = ppoisson(40, N)
     ERR = 0e-2
     pm_exp, pm_processed = make_qmodel(
         ideal_pn_model, MTYPE, N_CELLS, qe=QE, M=M, N0=N0, ERR=ERR)
@@ -150,7 +150,7 @@ if EXP == 1:
                     PEAK_AREA_LASER['36v'])
     ideal_pn_model = ppoisson(mean(pm_exp) / QE, N)
     pnoise = np.zeros(N)
-    
+
 elif EXP == 2:
     P_CROSSTALK = 0.013292422154555481
     dcr_distribution = normalize([242754, 89, 7])
@@ -160,15 +160,15 @@ elif EXP == 2:
         [25780, 47830, 49853, 33462, 15959, 6724, 2150, 761, 171, 33])
     test_data_004 = normalize([117609.2683, 4098, 373, 16])
     test_data_2 = normalize([3773.464655, 12714.21906, 16774.05141,
-                                16591.58704, 12407.57754, 9070, 3644,
-                                1648, 615, 180, 70, 49])
+                             16591.58704, 12407.57754, 9070, 3644,
+                             1648, 615, 180, 70, 49])
     test_data_5 = normalize([2734.396601, 10662.83842, 14854.70766,
-                                20760.48099, 16722.99395, 12863.43894,
-                                9085, 4613, 1717, 744, 208, 103])
+                             20760.48099, 16722.99395, 12863.43894,
+                             9085, 4613, 1717, 744, 208, 103])
     pm_exp = test_data_5
     ideal_pn_model = ppoisson(mean(pm_exp) / QE, N)
     pnoise = np.zeros(N)
-    
+
 elif EXP == 3:
     dir_path = r"I:/MGU/Laser"
     hist, bins = lo.single_pulse_histogram(dir_path)
@@ -180,7 +180,7 @@ elif EXP == 4:
     #P_CROSSTALK = 0.008129662598555697
     #P_CROSSTALK = 0.00442979044775124
     #P_CROSSTALK = 0.005260079621802079
-    P_CROSSTALK = 0.00434783902854902#0.00624033520243927 #  #  # Correct
+    P_CROSSTALK = 0.00434783902854902  # 0.00624033520243927 #  #  # Correct
     P_SUM_CT = 0.03168573186533852
 
     ampl_discrete = 0.03
@@ -211,7 +211,7 @@ elif EXP == 4:
         dir_name, 'hist_laserlamp_16.3ns.txt')
     # Offset 150 and skiprows 5 for histograms from oscilloscope
     pm_exp = file2Q(ampl_data_laser,
-                    ampl_discrete, skiprows=5)#, offset=150)
+                    ampl_discrete, skiprows=5)  # , offset=150)
     ideal_pn_model = ppoisson(mean(pm_exp) / QE, N)
     pnoise = np.zeros(N)
     pm_processed = compensate(pm_exp, P_CROSSTALK)
@@ -236,7 +236,8 @@ if __name__ == "__main__":
     if EXP:
         if ADJ_CROSSTALK:
             #correct_g2 = g2(P2Q(ss.correct_poisson(mean_pme / QE, N), QE)[:M])
-            P_CROSSTALK, _ = find_pcrosstalk(pm_exp, QE, N, mtype=MTYPE, n_cells=N_CELLS)
+            P_CROSSTALK, _ = find_pcrosstalk(
+                pm_exp, QE, N, mtype=MTYPE, n_cells=N_CELLS)
         pm_processed = compensate(pm_exp, P_CROSSTALK)
 
         plt.plot(pm_exp)
@@ -260,7 +261,7 @@ if __name__ == "__main__":
     #pn_rec = res.x
     pn_rec, zopt = Q2PCM(pm_processed, QE, N, 16)
     pm_rec = P2Q(pn_rec, QE, M)
-    
+
     if EXP:
         cdp.plot_exp_data(pm_processed,
                           pn_rec, pm_rec,

@@ -97,7 +97,8 @@ def bmrec_matrices(qe, mmax, nmax, max_order):
 # ================= COMPUTE MOMENTS =======================
 def convmoms(Q, qe, z, max_order):
     B = np.array([[
-        DPREC(qe ** -s * z ** (i - s) * binom(i, s)) if i >= s else 0 for i in lrange(Q)]
+        DPREC(qe ** -s * z ** (i - s) * binom(i, s))
+        if i >= s else 0 for i in lrange(Q)]
         for s in range(max_order)], dtype=DPREC)
     return B.dot(Q)
 
@@ -110,6 +111,11 @@ def bmoms(Q, qe, max_order):
 
 
 def imoms(Q, qe, max_order):
+    """
+    Initial moments
+
+    """
+
     F = np.array([[
         DPREC(qe ** -s * fact(i) / fact(i - s) if i >= s else 0)
         for i in lrange(Q)] for s in range(max_order)], dtype=DPREC)
@@ -185,7 +191,7 @@ def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
     W = convandermonde(nmax, z, qe, max_order)
     moms = convmoms(Q, qe, z, max_order)
     W, moms = precond_moms(W, moms)
-    return lsq_linear(W, moms, bounds=(-1, 1)).x
+    return lstsq(W, moms)[0]
 
 
 def Q2PCM(Q, qe, nmax=0, max_order=2):
@@ -193,7 +199,6 @@ def Q2PCM(Q, qe, nmax=0, max_order=2):
         lambda z: -sum(x for x in
                        convmrec_pn(Q, qe, z, nmax, max_order) if x < 0),
         bounds=(-1, 1), method="Bounded")
-    print(res)
     zopt = res.x
     return convmrec_pn(Q, qe, zopt, nmax, max_order), zopt
 
