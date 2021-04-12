@@ -8,6 +8,7 @@ Created on Fri Sep 11 21:38:13 2020
 """
 import numpy as np
 from scipy.special import binom
+from scipy.linalg import pinv
 
 from .invpmoms import convandermonde, mrec_matrices, vandermonde
 from .. import lrange, DPREC
@@ -42,7 +43,7 @@ def covm_convmoms(Q, qe, z, N0, max_order):
 
 def covm_conv_pn(Q, qe, z, N0, nmax, max_order):
     convm = covm_convmoms(Q, qe, z, N0, max_order)
-    T = np.linalg.pinv(convandermonde(nmax, qe, z, max_order))
+    T = pinv(convandermonde(nmax, qe, z, max_order))
     return covm_transform(convm, T).astype(DPREC)
 
 
@@ -56,7 +57,7 @@ def covm_bmoms(Q, qe, N0, max_order):
 
 def covm_bmoms_pn(Q, qe, N0, nmax, max_order):
     convm = covm_convmoms(Q, qe, 1, N0, max_order)
-    T = np.linalg.pinv(convandermonde(nmax, qe, 1, max_order))
+    T = pinv(convandermonde(nmax, qe, 1, max_order))
     return covm_transform(convm, T).astype(DPREC)
 
 
@@ -68,7 +69,7 @@ def covm_imoms(Q, qe, N0, max_order):
 
 def covm_imoms_pn(Q, qe, N0, nmax, max_order):
     convm = covm_convmoms(Q, qe, 1, N0, max_order)
-    T = np.linalg.pinv(vandermonde(nmax, max_order))
+    T = pinv(vandermonde(nmax, max_order))
     return covm_transform(convm, T).astype(DPREC)
 
 
