@@ -6,13 +6,12 @@ Created on Tue Apr 14 02:16:22 2020
 """
 
 import numpy as np
-from sympy.functions.combinatorial.numbers import stirling
 from scipy.special import binom
 from scipy.linalg import pinv, lstsq
-from scipy.optimize import minimize_scalar, lsq_linear
+from scipy.optimize import minimize_scalar
 
 from .pymaxent import reconstruct
-from .._numpy_core import fact, DPREC, normalize, lrange, g2, mean
+from .._numpy_core import fact, DPREC, normalize, lrange
 
 
 def precarray(arr):
@@ -27,7 +26,14 @@ def precarray(arr):
     return X
 
 
+def stirling2(n, k):
+    # https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind#Explicit_formula
+    s2 = np.sum([(-1) ** (k - j) * binom(k, j) * j ** n for j in range(k + 1)])
+    return DPREC(s2 / fact(k))
+
 # =============== CENTRAL MOMENTS ======================
+
+
 def cmoms_matrix(max_order, C):
     max_order = range(max_order)
     return np.array([[
@@ -65,10 +71,10 @@ def vandermonde(nmax, max_order):
 
 
 def bvandermonde(nmax, max_order):
-    return np.array([[binom(n, k) for n in range(nmax)] for k in range(max_order)])
+    return convandermonde(nmax, 1, 1, max_order)
 
 
-def convandermonde(nmax, z, qe, max_order):
+def convandermonde(nmax, qe, z, max_order):
     return np.array([[
         np.power(1 - qe + qe * z, n - k) * binom(n, k) if n >= k else 0 for n in range(nmax)]
         for k in range(max_order)])
@@ -80,7 +86,7 @@ def mrec_matrices(qe, mmax, nmax, max_order):
         DPREC(qe ** -s * fact(i) / fact(i - s) if i >= s else 0)
         for i in range(mmax)] for s in range(max_order)], dtype=DPREC)
     S = np.array([[
-        DPREC(int(stirling(k, s, kind=2))) for s in range(max_order)]
+        stirling2(k, s) for s in range(max_order)]
         for k in range(max_order)], dtype=DPREC)
     W = vandermonde(nmax, max_order)
     return W, S, F
@@ -104,10 +110,7 @@ def convmoms(Q, qe, z, max_order):
 
 
 def bmoms(Q, qe, max_order):
-    B = np.array([[
-        DPREC(qe) ** -s * binom(i, s) if i >= s else 0 for i in lrange(Q)]
-        for s in range(max_order)], dtype=DPREC)
-    return B.dot(Q)
+    return convmoms(Q, qe, 1, max_order)
 
 
 def imoms(Q, qe, max_order):
@@ -116,12 +119,7 @@ def imoms(Q, qe, max_order):
 
     """
 
-    F = np.array([[
-        DPREC(qe ** -s * fact(i) / fact(i - s) if i >= s else 0)
-        for i in lrange(Q)] for s in range(max_order)], dtype=DPREC)
-    S = np.array([[
-        DPREC(int(stirling(k, s, kind=2))) for s in range(max_order)]
-        for k in range(max_order)], dtype=DPREC)
+    W, S, F = mrec_matrices(qe, len(Q), 1, max_order)
     return S.dot(F).dot(Q)
 
 
@@ -162,39 +160,57 @@ def fmatrix(qe, z, nmax, max_order):
 # ====================== SOLVERS ==========================
 
 
-def mrec_pn(Q, qe, nmax=0, max_order=2):
+def rec_pn_generator(vandermonde_matrix, moms_fun, Q, nmax, max_order, args):
+    """
+
+
+    Parameters
+    ----------
+    vandermonde_matrix : np.array.dtype(DPREC)
+        Vandermonde matrix of definite type of moments.
+    moms_fun : function
+        Function to calculate moments vector.
+    Q : np.array
+        Photocounting statistics.
+    nmax : int
+        Max photon-number to reconstruct.
+    max_order : int
+        Max order of moments.
+    args : tuple
+        Args of moms_fun.
+
+    Returns
+    -------
+    np.array
+        Recovered photon-number statistics estimation.
+
+    """
     mmax = len(Q)
     if nmax == 0:
         nmax = mmax
-    W = vandermonde(nmax, max_order)
-    moms = imoms(Q, qe, max_order)
-    W, moms = precond_moms(W, moms)
-    P = lstsq(W, moms)[0]
-    return normalize(P)
-
-
-def bmrec_pn(Q, qe, nmax=0, max_order=2):
-    mmax = len(Q)
-    if nmax == 0:
-        nmax = mmax
-    W = bvandermonde(nmax, max_order)
-    moms = bmoms(Q, qe, max_order)
-    W, moms = precond_moms(W, moms)
-    P = lstsq(W, moms)[0]
-    return normalize(P)
+    moms = moms_fun(Q, *args, max_order)
+    vandermonde_matrix, moms = precond_moms(vandermonde_matrix, moms)
+    return lstsq(vandermonde_matrix, moms)[0]
 
 
 def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
-    mmax = len(Q)
-    if nmax == 0:
-        nmax = mmax
-    W = convandermonde(nmax, z, qe, max_order)
-    moms = convmoms(Q, qe, z, max_order)
-    W, moms = precond_moms(W, moms)
-    return lstsq(W, moms)[0]
+    return rec_pn_generator(convandermonde(nmax, qe, z, max_order),
+                            convmoms, Q, nmax, max_order, (qe, z))
+
+
+def Q2PIM(Q, qe, nmax=0, max_order=2):
+    # Reconstruct P from Q with initial moments
+    return rec_pn_generator(vandermonde(nmax, max_order),
+                            imoms, Q, nmax, max_order, (qe,))
+
+
+def Q2PBM(Q, qe, nmax=0, max_order=2):
+    # Reconstruct P from Q with binomial moments
+    return convmrec_pn(Q, qe, 1, nmax, max_order)
 
 
 def Q2PCM(Q, qe, nmax=0, max_order=2):
+    # Reconstruct P from Q with convergent moments
     res = minimize_scalar(
         lambda z: -sum(x for x in
                        convmrec_pn(Q, qe, z, nmax, max_order) if x < 0),
@@ -207,8 +223,7 @@ def mrec_maxent_pn(Q, qe, nmax=0, max_order=2):
     mmax = len(Q)
     if nmax == 0:
         nmax = mmax
-    W, S, F = mrec_matrices(qe, mmax, nmax, max_order)
-    moments = S.dot(F).dot(Q)
+    moments = imoms(Q, qe, max_order)
     P, _ = reconstruct(moments.astype(np.float64), rndvar=np.arange(nmax))
     return normalize(P)
 

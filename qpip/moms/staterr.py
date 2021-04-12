@@ -9,8 +9,10 @@ Created on Fri Sep 11 21:38:13 2020
 import numpy as np
 from scipy.special import binom
 
-from .invpmoms import convandermonde
+from .invpmoms import convandermonde, mrec_matrices, vandermonde
 from .. import lrange, DPREC
+from ..detection_core import invt_matrix
+
 
 def covm_mltnomial(success_prob_distr, meas_num):
     d = success_prob_distr
@@ -40,6 +42,37 @@ def covm_convmoms(Q, qe, z, N0, max_order):
 
 def covm_conv_pn(Q, qe, z, N0, nmax, max_order):
     convm = covm_convmoms(Q, qe, z, N0, max_order)
-    T = np.linalg.pinv(convandermonde(nmax, z, qe, max_order))
+    T = np.linalg.pinv(convandermonde(nmax, qe, z, max_order))
     return covm_transform(convm, T).astype(DPREC)
-    
+
+
+def covm_bmoms(Q, qe, N0, max_order):
+    convm = covm_mltnomial(Q, N0)
+    T = np.array([[
+        DPREC(qe ** -s * binom(i, s)) if i >= s else 0 for i in lrange(Q)]
+        for s in range(max_order)], dtype=DPREC)
+    return covm_transform(convm, T)
+
+
+def covm_bmoms_pn(Q, qe, N0, nmax, max_order):
+    convm = covm_convmoms(Q, qe, 1, N0, max_order)
+    T = np.linalg.pinv(convandermonde(nmax, qe, 1, max_order))
+    return covm_transform(convm, T).astype(DPREC)
+
+
+def covm_imoms(Q, qe, N0, max_order):
+    convm = covm_mltnomial(Q, N0)
+    W, S, F = mrec_matrices(qe, len(Q), 2, max_order)
+    return covm_transform(convm, S.dot(F))
+
+
+def covm_imoms_pn(Q, qe, N0, nmax, max_order):
+    convm = covm_convmoms(Q, qe, 1, N0, max_order)
+    T = np.linalg.pinv(vandermonde(nmax, max_order))
+    return covm_transform(convm, T).astype(DPREC)
+
+
+def covm_inv_pn(Q, qe, N0, nmax):
+    convm = covm_mltnomial(Q, N0)
+    T = invt_matrix(qe, nmax, len(Q))
+    return covm_transform(convm, T).astype(DPREC)
