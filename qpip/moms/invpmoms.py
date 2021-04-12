@@ -209,13 +209,14 @@ def Q2PBM(Q, qe, nmax=0, max_order=2):
     return convmrec_pn(Q, qe, 1, nmax, max_order)
 
 
-def Q2PCM(Q, qe, nmax=0, max_order=2):
+def Q2PCM(Q, qe, nmax=0, max_order=2, zopt=None):
     # Reconstruct P from Q with convergent moments
-    res = minimize_scalar(
-        lambda z: -sum(x for x in
-                       convmrec_pn(Q, qe, z, nmax, max_order) if x < 0),
-        bounds=(-1, 1), method="Bounded")
-    zopt = res.x
+    if zopt is None:
+        res = minimize_scalar(
+            lambda z: -sum(x for x in
+                           convmrec_pn(Q, qe, z, nmax, max_order) if x < 0),
+            bounds=(-1, 1), method="Bounded")
+        zopt = res.x
     return convmrec_pn(Q, qe, zopt, nmax, max_order), zopt
 
 
