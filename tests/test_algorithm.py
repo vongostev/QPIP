@@ -4,23 +4,19 @@ Created on Thu Oct 10 15:49:20 2019
 
 @author: vonGostev
 """
-import os
-import sys
-sys.path.append(os.path.abspath('..'))
-
-import matplotlib.pyplot as plt
-
-from qpip import compose as cmp
-from qpip import lrange, normalize, mean, g2, fidelity
-from qpip import P2Q, Q2P
-from qpip.epscon import invpopt, InvPBaseModel
-from qpip.stat import *
-
-import numpy as np
-import logging
-
-import datetime
+import __init__
 import copy
+import datetime
+import logging
+import numpy as np
+from qpip.stat import *
+from qpip.epscon import invpopt, InvPBaseModel
+from qpip import P2Q, Q2P
+from qpip import lrange, normalize, mean, g2, fidelity
+from qpip import compose as cmp
+import matplotlib.pyplot as plt
+import os
+
 
 if not os.path.exists('./img/'):
     os.makedirs('./img/')
@@ -55,12 +51,13 @@ info = logger.info
 dictzip = cmp(dict, zip)
 
 
-def make_qmodel(P, mtype, n_cells, qe=1, M=0, N0=0, ERR=0, **kwargs):
+def make_qmodel(P, mtype='binomial', n_cells=0, qe=1, M=0, N0=0, ERR=0, **kwargs):
     Q = P2Q(P, qe, M, mtype, n_cells)
     QND = np.random.choice(range(M), size=N0, p=Q.astype(float))
     QN = np.histogram(QND, bins=range(M + 1), density=True)[0]
     if ERR:
-        QN = cmp(normalize, np.abs)(QN*(1 + np.random.uniform(-ERR, ERR, size=len(QN))))
+        QN = cmp(normalize, np.abs)(
+            QN*(1 + np.random.uniform(-ERR, ERR, size=len(QN))))
     return Q, QN
 
 
@@ -146,7 +143,7 @@ TEST_PARAMETERS_SET = [
     [int(1E5), int(1E6), int(1E7), int(1E8)],
     [10, 11, 12, 13, 14, 15],
     [0.32, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1],
-    [1e-3],#[1e-5, 1e-4, 1e-3, 5e-3, 1e-2, 1e-2, 1e-1],
+    [1e-3],  # [1e-5, 1e-4, 1e-3, 5e-3, 1e-2, 1e-2, 1e-1],
     [1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8]
 ]
 STEP_RESULTS_TEMPLATE = [
