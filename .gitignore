@@ -133,5 +133,4 @@ dmypy.json
 *.wfm
 *.csv
 *.zip
-tests/mrec_exp.py
-tests/compose_data.py
+tests2/

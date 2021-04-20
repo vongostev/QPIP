@@ -5,7 +5,7 @@ Created on Fri Oct  2 13:11:13 2020
 
 @author: Pavel Gostev
 
-numpy version of core functions
+numpy version
 """
 
 import functools
@@ -19,9 +19,8 @@ try:
     DPREC = np.float128
 except AttributeError:
     DPREC = np.float64
-    np.warnings.warn_explicit(
-        "Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.",
-        RuntimeWarning, __file__, 19)
+    print('%s:%s:' % (__file__, 19), 'RuntimeWarning:',
+          "Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.")
 
 
 def compose(*functions):
