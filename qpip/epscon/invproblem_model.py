@@ -11,7 +11,8 @@ from pyomo.environ import (RangeSet, Set, ConcreteModel, Param,
                            quicksum, log)
 from pyomo.core.expr.numvalue import RegisterNumericType
 
-from ..detection_core import compose, moment, t_matrix, DPREC
+from .._numpy_core import compose, moment, DPREC
+from .. import d_matrix
 
 RegisterNumericType(DPREC)
 
@@ -223,7 +224,7 @@ class InvPBaseModel(ConcreteModel):
         Q = Q[Q > 0]
         M = len(Q)
         init_pn = np.ones(N) / N
-        T = t_matrix(qe, N, M, mtype, n_cells)
+        T = d_matrix(qe, N, M, mtype, n_cells)
 
         self.PSET = RangeSet(0, N - 1)
         self.NZPSET = RangeSet(0, N - 1)

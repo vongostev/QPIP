@@ -3,10 +3,6 @@ scipy
 matplotlib
 pyomo
 qutip
-lecroyparser
-joblib
-dataclasses
 logging
 ipopt
-compress_pickle
 pymaxent

@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from ._eps_optimization import iterate, info
 
 
-def invpopt(invpmodel, solver=None,
+def invpopt(invpmodel, solver_name='ipopt', solver_path='',
             eps_tol=0, save_all_nondom_x=False,
             save_all_nondom_y=False, disp=False, plot=False):
     """
@@ -32,9 +32,11 @@ def invpopt(invpmodel, solver=None,
     ----------
     invpmodel : pyomo.environ.ConcreteModel
         The pyomo model described a problem.
-    solver : pyomo.opt.SolverFactory, optional
+    solver_name : pyomo.opt.SolverFactory, optional
         Solver to solve the problem.
         The default is ipopt if installed.
+    solver_path : str, optional
+        Path to the solver executable
     eps_tol : float, optional
         Tolarance of additional variables to finish iterations.
         The default is 0.
@@ -61,8 +63,9 @@ def invpopt(invpmodel, solver=None,
 
     """
 
-    if solver is None:
-        solver = SolverFactory('ipopt', solver_io="nl")
+    solver = SolverFactory(solver_name, solver_io="nl")
+    if solver_path:
+        solver.executable = solver_path
 
     negentropy_bounds = [[-np.log(len(invpmodel.PSET))], [0]]
 
