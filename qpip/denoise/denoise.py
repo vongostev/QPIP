@@ -7,7 +7,7 @@ Created on Mon Dec 16 17:15:10 2019
 import numpy as np
 from pyomo.opt import SolverFactory
 from pyomo.environ import Constraint
-from scipy.optimize import brute, OptimizeResult
+from scipy.optimize import brute
 import matplotlib.pyplot as plt
 
 from ..epscon._eps_optimization import iterate, info
