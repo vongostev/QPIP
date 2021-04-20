@@ -14,7 +14,9 @@ from ..epscon._eps_optimization import iterate, info
 from .._numpy_core import lrange, p_convolve, mean, fidelity, g2
 from ..stat import ppoisson, pthermal
 
-def warn(*args): return  np.warnings.warn_explicit(*args)
+
+def warn(*args): return np.warnings.warn_explicit(*args)
+
 
 def thermalnoise_mean(P):
     """
@@ -35,7 +37,8 @@ def thermalnoise_mean(P):
     """
 
     N = len(P)
-    opt = lambda x: 1 - fidelity(p_convolve(ppoisson(x[0], N), pthermal(x[1], N)), P)
+    def opt(x): return 1 - \
+        fidelity(p_convolve(ppoisson(x[0], N), pthermal(x[1], N)), P)
     res = brute(opt, [(0, mean(P)), (0.0, mean(P))], Ns=100, full_output=True)
     smean, nmean = res[0]
     fval = res[1]
@@ -171,7 +174,7 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
     if g2(dnmodel.P) < 1:
         warn('g2 of the given distribution is less than 1. Algorithm can not use g2 and mean bounds.',
              RuntimeWarning, __file__, 171)
- 
+
     if solver is None:
         solver = SolverFactory('ipopt', solver_io="nl")
 
@@ -217,7 +220,8 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
                   save_all_nondom_y=save_all_nondom_y,
                   disp=disp)
 
-    info('Optimization ended in %d iterations with eps_tol %.1e' % (res.nit, eps_tol))
+    info('Optimization ended in %d iterations with eps_tol %.1e' %
+         (res.nit, eps_tol))
     info('Status "{0}", "{1}"'.format(*res.status))
 
     if plot and res.nit > 1:
