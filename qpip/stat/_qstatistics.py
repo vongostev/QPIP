@@ -12,7 +12,24 @@ from scipy.special import gamma
 # ========================= PHOTOCOUNTING STATISTICS ==========================
 @np.vectorize
 def qthermal_unpolarized(m, mean, M):
-    """ Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0 """
+    """
+    Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0    
+
+    Parameters
+    ----------
+    m : int
+        Photocounts number.
+    mean : float
+        Mean value of the distribution.
+    M : int
+        Ration of measurement time to coherence time.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     return sum(gamma(m - k + M) / (gamma(m - k + 1) * gamma(M)) *
                gamma(k + M) / (gamma(k + 1) * gamma(M))
                for k in np.arange(m + 1)) * \

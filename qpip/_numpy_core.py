@@ -10,18 +10,17 @@ numpy version
 
 import functools
 import numpy as np
-from scipy.special import factorial, binom
+from scipy.special import factorial
 
 __all__ = ['compose', 'lrange', 'fact', 'p_convolve', 'moment', 'mean', 'g2',
-           'normalize', 'abssum', 'fidelity', 'entropy']
+           'normalize', 'abssum', 'fidelity', 'entropy', 'DPREC']
 
 try:
     DPREC = np.float128
 except AttributeError:
     DPREC = np.float64
-    np.warnings.warn_explicit(
-        "Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.",
-        RuntimeWarning, __file__, 19)
+    print('%s:%s:' % (__file__, 19), 'RuntimeWarning:',
+          "Numpy.float128 can not be used. DPREC is numpy.float64, results may be unprecise.")
 
 
 def compose(*functions):
@@ -61,18 +60,6 @@ def g2(p):
     return (s - m) / m ** 2
 
 
-def fmoment(p, N):
-    return sum(fact(i) / fact(i - N) * p[i] for i in lrange(p) if i >= N)
-
-
-def bmoment(p, N):
-    return sum(binom(i, N) * p[i] for i in lrange(p) if i >= N)
-
-
-def cmoment(p, N):
-    return sum((i ** N - moment(p, 1)) * p[i] for i in lrange(p))
-
-
 def normalize(p):
     return np.array(p) / moment(p, 0)
 
@@ -83,8 +70,9 @@ def abssum(p):
 
 def fidelity(p1, p2):
     if len(p1) != len(p2):
-        print('WARNING:',
-              'Probabilities for the fidelity calculation must have the same length')
+        np.warnings.warn_explicit(
+            'Probabilities for the fidelity calculation must have the same length',
+            RuntimeWarning, __file__, 72)
     plen = min(len(p1), len(p2))
     prod = [p1[i] * p2[i] for i in range(plen)]
     return sum(np.sign(p)*np.sqrt(abs(p)) for p in prod) ** 2
@@ -92,13 +80,3 @@ def fidelity(p1, p2):
 
 def entropy(p):
     return sum(- e * np.log(e) for e in p if e > 0)
-
-
-def average_entropy(p):
-    return - np.mean([np.log(e / np.mean(p)) for e in p])
-
-
-def pprint_stats(p):
-    print('norm', moment(p, 0))
-    print('mean', mean(p))
-    print('g2', g2(p))

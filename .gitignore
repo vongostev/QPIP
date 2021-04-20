@@ -134,5 +134,5 @@ dmypy.json
 *.csv
 *.zip
 
-tests\*
-tests2\*
+tests/*
+tests2/*

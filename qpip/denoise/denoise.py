@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from ..epscon._eps_optimization import iterate, info
 from .._numpy_core import lrange, p_convolve, mean, fidelity, g2
 from ..stat import ppoisson, pthermal
+from .denoise_model import DenoisePBaseModel
 
 
 def warn(*args): return np.warnings.warn_explicit(*args)
@@ -117,7 +118,7 @@ def noiseg2_by_mean(P, nmean):
 
 def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
                g2_lbound=0, g2_ubound=0,
-               eps_tol=0, solver=None,
+               eps_tol=0, solver_name='ipopt', solver_path='',
                save_all_nondom_x=False, plot=False,
                save_all_nondom_y=False, disp=False):
     """
@@ -143,9 +144,11 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
     g2_ubound : float, optional
         Maximal possible value of noise's g2. The default is 0 and ignored.
         Also ignored if mean bounds exist.
-    solver : pyomo.opt.SolverFactory, optional
+    solver_name : str, optional
         Solver to solve the problem.
         The default is ipopt if installed.
+    solver_path : str, optional
+        Path to the solver executable
     eps_tol : float, optional
         Tolarance of additional variables to finish iterations.
         The default is 0.
@@ -175,8 +178,9 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
         warn('g2 of the given distribution is less than 1. Algorithm can not use g2 and mean bounds.',
              RuntimeWarning, __file__, 171)
 
-    if solver is None:
-        solver = SolverFactory('ipopt', solver_io="nl")
+    solver = SolverFactory(solver_name, executable=solver_path, solver_io="nl")
+    if solver_path:
+        solver.executable = solver_path
 
     y_vars = ['discrepancy', 'noise_mean', 'negentropy', 'noise_g2']
     x_var = 'p_noise'
@@ -231,3 +235,18 @@ def denoiseopt(dnmodel, mean_lbound=0, mean_ubound=0,
             plt.show()
 
     return res
+
+
+def pdenoise(P, M, is_zero_n=0,
+             mean_lbound=0, mean_ubound=0,
+             g2_lbound=0, g2_ubound=0,
+             eps_tol=0, solver_name='ipopt', solver_path='',
+             save_all_nondom_x=False, plot=False,
+             save_all_nondom_y=False, disp=False):
+    dnmodel = DenoisePBaseModel(P, M, is_zero_n)
+    return denoiseopt(dnmodel,
+                      mean_lbound, mean_ubound,
+                      g2_lbound, g2_ubound, eps_tol,
+                      solver_name, solver_path,
+                      save_all_nondom_x, plot,
+                      save_all_nondom_y, disp)
