@@ -11,7 +11,7 @@ from scipy.linalg import pinv, lstsq
 from scipy.optimize import minimize_scalar
 
 from .pymaxent import reconstruct
-from .._numpy_core import fact, DPREC, normalize, lrange
+from .._numpy_core import fact, DPREC, normalize
 
 
 @np.vectorize

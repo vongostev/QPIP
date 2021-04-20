@@ -7,11 +7,10 @@ Created on Fri Sep 11 21:38:13 2020
 Основные сущности для анализа ошибок
 """
 import numpy as np
-from scipy.special import binom
 from scipy.linalg import pinv
 
 from .invpmoms import convandermonde, q2p_mrec_matrices, vandermonde, q2p_convmoms_matrix
-from .. import lrange, DPREC
+from .. import DPREC
 from .._dcore import invd_matrix
 
 
