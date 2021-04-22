@@ -1,7 +1,6 @@
 # QPIP
  Instruments and methods to solve the quantum photocounting inverse problem
 QPIP module consists of some parts:
-- core: Function for calculating photocounting statistics from photon-number statistics and vice versa. Also a few utility functions in _numpy_core
 - epscon: Pyomo model and epsilon-constrained algorithm to recover photon-number statistics from photocounting statistics in the presence of noise The approach based on minimization of differential entropy of photocounting statistics and its estimation and maximization of photon-number statistics estimation entropy qpip.epscon can be used to recover any photon-number statistics with any quantum efficiency of the detector. One can use both binomial and subbinomial models of photodetection. See also [the related material](https://www.researchgate.net/publication/345998521) for additional details.
 - stat: Some examples of photon-number and photocounting statistics corresponding to quantum light fields
 - denoise: Pyomo model and epsilon-constrained algorithm to recover noise statistics of laser source or signal statistics against the background of coherent noise (for example in collinear SPDC analyzing). Here we use a method to determine photon-number (or photocounting) statistics of excess noise in laser radiation from measured photocounting statistics. The method based on the multi-objective optimization approach is applied to blind deconvolution problem to determine excess noise distribution from the convolution of this one and Poissonian photon-number distribution of laser radiation. See [the related material](http://www.researchgate.net/publication/345087870) for additional details.
@@ -10,8 +9,9 @@ QPIP module consists of some parts:
 Import necessary modules:
 ```python
 import numpy as np
+from fpdet import normalize, P2Q, fidelity
+
 from qpip.stat import ppoisson
-from qpip import normalize, P2Q, fidelity
 from qpip.epscon import InvPBaseModel, invpopt
 ```
 Make photocounting statistics of the sample of finite size in presence of the noise
@@ -41,8 +41,9 @@ print(fidelity(res.x, P))
 Import necessary modules:
 ```python
 import numpy as np
+from fpdet import normalize, P2Q, fidelity, p_convolve
+
 from qpip.stat import ppoisson, pthermal
-from qpip import normalize, P2Q, fidelity, p_convolve
 from qpip.denoise import DenoisePBaseModel, denoiseopt
 ```
 Make noised statistics of the sample of finite size in presence of the noise
