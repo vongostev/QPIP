@@ -10,7 +10,7 @@ from scipy.special import gamma, binom
 from qutip import thermal_dm, fock_dm, coherent_dm, basis
 from qutip.operators import displace, squeeze
 
-from .._numpy_core import normalize
+from fpdet import normalize
 
 
 def correct_distrib(p, non_ideal=False, dtype='default'):

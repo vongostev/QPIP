@@ -11,11 +11,11 @@ from scipy.linalg import pinv, lstsq
 from scipy.optimize import minimize_scalar
 
 from .pymaxent import reconstruct
-from .._numpy_core import fact, DPREC, normalize
+from fpdet import fact, DPREC, normalize
 
 
 @np.vectorize
-def stirling2(n, k):
+def stirling2(n: int, k: int):
     # https://en.wikipedia.org/wiki/Stirling_numbers_of_the_second_kind#Explicit_formula
     K = np.arange(k + 1)
     s2 = np.sum((-1) ** (k - K) * comb(k, K) * K ** n)
@@ -23,13 +23,13 @@ def stirling2(n, k):
 
 
 # =================== VANDERMONDE MATRICES =======================
-def vandermonde(nmax, max_order, *args):
+def vandermonde(nmax: int, max_order: int, *args):
     k = np.arange(max_order).reshape((-1, 1))
     n = np.arange(nmax).reshape((1, -1))
     return DPREC(n**k)
 
 
-def bvandermonde(nmax, max_order, *args):
+def bvandermonde(nmax: int, max_order: int, *args):
     """
     Vandermonde type matrix to calculate binomial moments from a PDF
 
@@ -52,14 +52,14 @@ def bvandermonde(nmax, max_order, *args):
     return convandermonde(nmax, max_order, 1., 1.)
 
 
-def convandermonde(nmax, max_order, qe, z, *args):
+def convandermonde(nmax: int, max_order: int, qe, z, *args):
     k = np.arange(max_order).reshape((-1, 1))
     n = np.arange(nmax).reshape((1, -1))
     return np.power(1 - qe + qe * z, n - k) * comb(n, k)
 
 
 # ================== MATRICES TO COMPUTE P MOMENTS =======================
-def q2p_mrec_matrices(mmax, max_order, qe):
+def q2p_mrec_matrices(mmax: int, max_order: int, qe):
     k = np.arange(max_order).reshape((-1, 1))
     m = np.arange(mmax).reshape((1, -1))
     F = DPREC(qe ** -k * perm(m, k))
@@ -67,30 +67,25 @@ def q2p_mrec_matrices(mmax, max_order, qe):
     return S, F
 
 
-def q2p_convmoms_matrix(mmax, max_order, qe, z):
+def q2p_convmoms_matrix(mmax: int, max_order: int, qe, z):
     k = np.arange(max_order).reshape((-1, 1))
     B = convandermonde(mmax, max_order, 1., z)
     return qe ** -k * B
 
 
 # ================= COMPUTE MOMENTS =======================
-def convmoms(Q, max_order, qe, z):
+def convmoms(Q, max_order: int, qe, z):
     B = q2p_convmoms_matrix(len(Q), max_order, qe, z)
-    return B.dot(Q)
+    return B @ Q
 
 
-def bmoms(Q, max_order, qe):
+def bmoms(Q, max_order: int, qe):
     return convmoms(Q, max_order, qe, 1.)
 
 
-def imoms(Q, max_order, qe):
-    """
-    Initial moments
-
-    """
-
+def imoms(Q, max_order: int, qe):
     S, F = q2p_mrec_matrices(len(Q), max_order, qe)
-    return S.dot(F).dot(Q)
+    return S @ F @ Q
 
 
 # ================= MOMENTS UTILS =========================
@@ -106,15 +101,15 @@ def precond_moms(W, moms, Q=None, qe=None):
     return W, moms
 
 
-def mrec_cond(mmax, nmax, qe, max_order=2):
+def mrec_cond(mmax: int, nmax: int, qe, max_order: int = 2):
     W = vandermonde(nmax, max_order)
     S, F = q2p_mrec_matrices(mmax, max_order, qe)
-    S1 = pinv(W).dot(S).dot(F)
+    S1 = pinv(W) @ S @ F
     return np.linalg.norm(S1, 2) * np.linalg.norm(pinv(S1), 2)
 
 
 # ====================== SOLVERS ==========================
-def mrec_maxent_pn(Q, qe, nmax=0, max_order=2):
+def mrec_maxent_pn(Q, qe, nmax: int = 0, max_order: int = 2):
     mmax = len(Q)
     if nmax == 0:
         nmax = mmax
@@ -123,7 +118,7 @@ def mrec_maxent_pn(Q, qe, nmax=0, max_order=2):
     return normalize(P)
 
 
-def rec_pn_generator(vandermonde_fun, moms_fun, Q, nmax, max_order, args):
+def rec_pn_generator(vandermonde_fun, moms_fun, Q, nmax: int, max_order: int, args):
     """
 
 
@@ -157,23 +152,23 @@ def rec_pn_generator(vandermonde_fun, moms_fun, Q, nmax, max_order, args):
     return lstsq(vandermonde_matrix, moms)[0]
 
 
-def convmrec_pn(Q, qe, z, nmax=0, max_order=2):
+def convmrec_pn(Q, qe, z, nmax: int = 0, max_order: int = 2):
     return rec_pn_generator(convandermonde,
                             convmoms, Q, nmax, max_order, (qe, z))
 
 
-def Q2PIM(Q, qe, nmax=0, max_order=2):
+def Q2PIM(Q, qe, nmax: int = 0, max_order: int = 2):
     # Reconstruct P from Q with initial moments
     return rec_pn_generator(vandermonde,
                             imoms, Q, nmax, max_order, (qe,))
 
 
-def Q2PBM(Q, qe, nmax=0, max_order=2):
+def Q2PBM(Q, qe, nmax: int = 0, max_order: int = 2):
     # Reconstruct P from Q with binomial moments
     return convmrec_pn(Q, qe, 1, nmax, max_order)
 
 
-def Q2PCM(Q, qe, nmax=0, max_order=2, zopt=None):
+def Q2PCM(Q, qe, nmax: int = 0, max_order: int = 2, zopt=None):
     # Reconstruct P from Q with convergent moments
     if zopt is None:
         res = minimize_scalar(

@@ -11,8 +11,7 @@ from pyomo.environ import (RangeSet, Set, ConcreteModel, Param,
                            quicksum, log)
 from pyomo.core.expr.numvalue import RegisterNumericType
 
-from .._numpy_core import compose, moment, DPREC
-from .. import d_matrix
+from fpdet import compose, moment, DPREC, d_matrix
 
 RegisterNumericType(DPREC)
 

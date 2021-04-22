@@ -11,7 +11,7 @@ from scipy.optimize import brute
 import matplotlib.pyplot as plt
 
 from ..epscon._eps_optimization import iterate, info
-from .._numpy_core import lrange, p_convolve, mean, fidelity, g2
+from fpdet import lrange, p_convolve, mean, fidelity, g2
 from ..stat import ppoisson, pthermal
 from .denoise_model import DenoisePBaseModel
 

@@ -5,13 +5,15 @@ Created on Fri Oct 23 14:49:11 2020
 
 @author: Pavel Gostev
 """
-from .._numpy_core import moment, g2, fact, DPREC
 import numpy as np
 from pyomo.core.expr.numvalue import RegisterNumericType
 from pyomo.environ import (ConcreteModel, Expression, RangeSet,
                            Var, Param, Constraint, Set,
                            exp, log, quicksum)
 from pyomo.dae.plugins.colloc import conv
+
+from fpdet import moment, g2, fact, DPREC
+
 
 RegisterNumericType(DPREC)
 

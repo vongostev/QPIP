@@ -11,7 +11,7 @@ Physical Review A, 53(3), 1245.
 """
 
 import numpy as np
-from .._numpy_core import fact, lrange
+from fpdet import fact, lrange
 from joblib import Parallel, delayed
 
 
