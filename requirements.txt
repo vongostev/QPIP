@@ -5,4 +5,4 @@ pyomo
 qutip
 joblib
 ipopt
-pymaxent
+fpdet
