@@ -5,41 +5,34 @@ Created on Fri Jun  7 22:17:25 2019
 @author: von.gostev
 """
 import numpy as np
-from scipy.special import gamma, binom
+from scipy.special import binom
+from scipy.special import gamma as Γ
 
-from qutip import thermal_dm, fock_dm, coherent_dm, basis
+from scipy.stats import poisson, nbinom
+
+from qutip import basis
 from qutip.operators import displace, squeeze
 
 from fpdet import normalize
 
 
-def correct_distrib(p, non_ideal=False, dtype='default'):
-    if non_ideal:
-        p[p < 1e-5] = 0
-    if dtype == 'default':
-        return normalize(p)
-    else:
-        p = np.array([dtype(x) for x in p])
-        return normalize(p)
+def ppoisson(mean, N):
+    return poisson.pmf(np.arange(N), mean)
 
 
-def ppoisson(mean, N, non_ideal=False, dtype='default'):
-    p = coherent_dm(N, np.sqrt(mean)).diag()
-    return correct_distrib(p, non_ideal, dtype)
+def pthermal(mean, N):
+    return pthermal_polarized(mean, 1, N)
 
 
-def pthermal(mean, N, non_ideal=False, dtype='default'):
-    p = thermal_dm(N, float(mean)).diag()
-    return correct_distrib(p, non_ideal, dtype)
+def pfock(mean, N):
+    if np.floor(mean) != mean:
+        raise ValueError(f'Fock state energy must be int, not {mean}')
+    P = np.zeros(N)
+    P[mean] = 1
+    return P
 
 
-def pfock(mean, N, non_ideal=False, dtype='default'):
-    p = fock_dm(N, int(mean)).diag()
-    return correct_distrib(p, non_ideal, dtype)
-
-
-@np.vectorize
-def pthermal_photonsub(N, mean, photonsub):
+def pthermal_photonsub(mean, photonsub, N):
     """
     Barnett, Stephen M., et al. 
     "Statistics of photon-subtracted and photon-added states." 
@@ -47,12 +40,12 @@ def pthermal_photonsub(N, mean, photonsub):
 
     Parameters
     ----------
-    N : int
-        maximal photon number.
     mean : float
         mean of distribution.
     photonsub : int
         count of substracted photons.
+    N : int
+        maximal photon number.
 
     Returns
     -------
@@ -60,13 +53,11 @@ def pthermal_photonsub(N, mean, photonsub):
         Probability for the given photon number.
 
     """
-    return np.array([
-        mean ** n / (1 + mean) ** (n + photonsub + 1) *
-        binom(n + photonsub, photonsub)
-        for n in range(N)])
+    n = np.arange(N)
+    return mean ** n / (1 + mean) ** (n + photonsub + 1) * binom(n + photonsub, photonsub)
 
 
-def pthermal_photonadd(N, mean, photonadd):
+def pthermal_photonadd(mean, photonadd, N):
     """
     Barnett, Stephen M., et al.
     "Statistics of photon-subtracted and photon-added states."
@@ -74,12 +65,12 @@ def pthermal_photonadd(N, mean, photonadd):
 
     Parameters
     ----------
-    n : int
-        maximal photon number.
     mean : float
         mean of distribution.
     photonadd : int
         count of added photons.
+    N : int
+        maximal photon number.
 
     Returns
     -------
@@ -87,14 +78,13 @@ def pthermal_photonadd(N, mean, photonadd):
         Probability for the given photon number.
 
     """
-    P = np.array([mean ** (n - photonadd) / (1 + mean) ** (n + 1)
-                  * binom(n, photonadd) for n in range(N)])
+    n = np.arange(N)
+    P = mean ** (n - photonadd) / (1 + mean) ** (n + 1) * binom(n, photonadd)
     P[:photonadd] = 0
     return P
 
 
-@np.vectorize
-def phyper_poisson(m, lam, beta):
+def phyper_poisson(lam, beta, N):
     """
     Bardwell, G. E., & Crow, E. L. (1964).
     A two-parameter family of hyper-Poisson distributions.
@@ -107,12 +97,12 @@ def phyper_poisson(m, lam, beta):
 
     Parameters
     ----------
-    m : int
-        discrete variable.
     lam : float
         Parameter 1.
     beta : float
         Parameter 2.
+    N : int
+        maximal photon number.
 
     Returns
     -------
@@ -121,15 +111,16 @@ def phyper_poisson(m, lam, beta):
 
     """
 
-    def phi_function(beta, lam, N=1000):
-        return sum(gamma(beta) / gamma(beta + k) * lam ** k
-                   for k in range(N))
+    def phi_function(beta, lam, N=100):
+        k = np.arange(N)
+        return np.sum(Γ(beta) / Γ(beta + k) * lam ** k)
 
+    n = np.arange(N)
     phi = phi_function(beta, lam)
-    return gamma(beta) / gamma(beta + m) * lam ** m / phi
+    return Γ(beta) / Γ(beta + n) * lam ** n / phi
 
 
-def psqueezed_coherent1(N, ampl, sq_coeff):
+def psqueezed_coherent1(ampl, sq_coeff, N):
     vac = basis(N, 0)
     d = displace(N, ampl)
     s = squeeze(N, sq_coeff)
@@ -137,24 +128,30 @@ def psqueezed_coherent1(N, ampl, sq_coeff):
     return (d * s * vac).unit()
 
 
-def psqueezed_vacuumM(N, M, r, theta):
+def psqueezed_vacuumM(r, theta, M, N):
     """
     M-mode squeezed vacuum state
-    ------------------------------
-    Parameters:
-        N : int
-            number of fock levels in the generated state
-        M : int
-            number of modes
-        mean : complex
-            Pump parameter [0, 1]
-        phase : float
-            relative phase shift of two modes one by one
 
-    Returns:
-        A Qobj instance that represents
-        M-mode squeezed vacuum state as ket vector
+    Parameters
+    ---------
+    mean : complex
+        Pump parameter [0, 1]
+    phase : float
+        relative phase shift of two modes one by one
+    M : int
+        number of modes
+    N : int
+        maximal photon number.
+
+    Returns
+    -------
+        M-mode squeezed vacuum photon-number distribution
     """
-    distribution = np.array(
-        [(np.tanh(r) ** n / np.cosh(r) if n % 2 == 0 else 0) for n in range(N)])
+    n = np.arange(N)
+    distribution = np.tanh(r) ** n / np.cosh(r) * (1 - n % 2)
     return normalize(distribution ** 2)
+
+
+def pthermal_polarized(mean, dof, N):
+    p = 1 - mean / (dof + mean)
+    return nbinom.pmf(np.arange(N), dof, p)

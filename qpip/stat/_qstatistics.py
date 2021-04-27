@@ -6,38 +6,60 @@ Created on Thu Oct 22 21:59:54 2020
 @author: vong
 """
 import numpy as np
-from scipy.special import gamma
+from scipy.special import gamma as Γ
+from fpdet import normalize
 
 
 # ========================= PHOTOCOUNTING STATISTICS ==========================
-@np.vectorize
-def qthermal_unpolarized(m, mean, M):
+def qthermal_unpolarized(mean, dof, N):
     """
-    Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0    
+    Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0
 
     Parameters
     ----------
-    m : int
-        Photocounts number.
     mean : float
         Mean value of the distribution.
-    M : int
+    dof : int
         Ration of measurement time to coherence time.
+    N : int
+        Maximal photocounts number.
 
     Returns
     -------
-    TYPE
-        DESCRIPTION.
+    np.ndarray
+        Photounts distribution.
 
     """
-    return sum(gamma(m - k + M) / (gamma(m - k + 1) * gamma(M)) *
-               gamma(k + M) / (gamma(k + 1) * gamma(M))
-               for k in np.arange(m + 1)) * \
-        (1 + 2 * M / mean) ** (- m) * (1 + mean / 2 / M) ** (- 2 * M)
+    @np.vectorize
+    def fsum(_m):
+        k = np.arange(_m + 1)
+        return np.sum(Γ(_m - k + dof) / (Γ(_m - k + 1) * Γ(dof)) *
+                      Γ(k + dof) / (Γ(k + 1) * Γ(dof)))
+
+    m = np.arange(N)
+    return normalize(
+        fsum(m) * (1 + 2 * dof / mean) ** (- m) * (1 + mean / 2 / dof) ** (- 2 * dof))
 
 
-@np.vectorize
-def qthermal_polarized(m, mean, M):
-    """ Дж. Гудмен, Статистическая оптика, ф-ла 9.2.24 """
-    return gamma(m + M) / (gamma(m + 1) * gamma(M)) * \
-        (1 + M / mean) ** (- m) * (1 + mean / M) ** (- M)
+def qthermal_polarized(mean, dof, N):
+    """
+    Дж. Гудмен, Статистическая оптика, ф-ла 9.2.24 
+
+    Parameters
+    ----------
+    mean : float
+        Mean value of the distribution.
+    dof : int
+        Ration of measurement time to coherence time.
+    N : int
+        Maximal photocounts number.
+
+    Returns
+    -------
+    np.ndarray
+        Photounts distribution.
+
+    """
+    m = np.arange(N)
+    return normalize(
+        Γ(m + dof) / (Γ(m + 1) * Γ(dof)) * (1 + dof / mean) ** (- m) * (1 + mean / dof) ** (- dof))

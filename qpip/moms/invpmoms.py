@@ -89,16 +89,9 @@ def imoms(Q, max_order: int, qe):
 
 
 # ================= MOMENTS UTILS =========================
-def precond_moms(W, moms, Q=None, qe=None):
+def precond_moms(W, moms):
     wmax = np.max(W, axis=1)
-    W = np.array([w / np.max(W, axis=1) for w in W.T]).T
-    moms = moms / wmax
-    # moms = np.append(moms, 1)
-    # W = np.vstack((W, np.ones(W.shape[1])))
-    # if Q is not None:
-    #     moms = np.append(moms, g2(Q))
-    #     W = np.vstack((W, [((n - 1) * n if n >= 1 else 0) / mean(Q) ** 2 * qe ** 2 for n in range(W.shape[1])]))
-    return W, moms
+    return (W.T / wmax).T, moms / wmax
 
 
 def mrec_cond(mmax: int, nmax: int, qe, max_order: int = 2):
@@ -118,7 +111,8 @@ def mrec_maxent_pn(Q, qe, nmax: int = 0, max_order: int = 2):
     return normalize(P)
 
 
-def rec_pn_generator(vandermonde_fun, moms_fun, Q, nmax: int, max_order: int, args):
+def rec_pn_generator(vandermonde_fun: object, moms_fun: object,
+                     Q: np.ndarray, nmax: int, max_order: int, args):
     """
 
 
@@ -168,12 +162,12 @@ def Q2PBM(Q, qe, nmax: int = 0, max_order: int = 2):
     return convmrec_pn(Q, qe, 1, nmax, max_order)
 
 
-def Q2PCM(Q, qe, nmax: int = 0, max_order: int = 2, zopt=None):
+def Q2PCM(Q, qe, nmax: int = 0, max_order: int = 2, zopt=None, zmax: float = 1) -> np.ndarray:
     # Reconstruct P from Q with convergent moments
     if zopt is None:
         res = minimize_scalar(
             lambda z: -sum(x for x in convmrec_pn(Q, qe,
                            z, nmax, max_order) if x < 0),
-            bounds=(-1, 1), method="Bounded")
+            bounds=(-zmax, zmax), method="Bounded")
         zopt = res.x
     return convmrec_pn(Q, qe, zopt, nmax, max_order), zopt
