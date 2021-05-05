@@ -17,7 +17,7 @@ from fpdet import normalize
 
 
 def ppoisson(mean, N):
-    return poisson.pmf(np.arange(N), mean)
+    return normalize(poisson.pmf(np.arange(N), mean))
 
 
 def pthermal(mean, N):
@@ -54,7 +54,9 @@ def pthermal_photonsub(mean, photonsub, N):
 
     """
     n = np.arange(N)
-    return mean ** n / (1 + mean) ** (n + photonsub + 1) * binom(n + photonsub, photonsub)
+    P = mean ** n / (1 + mean) ** (n + photonsub + 1) * \
+        binom(n + photonsub, photonsub)
+    return normalize(P)
 
 
 def pthermal_photonadd(mean, photonadd, N):
@@ -81,7 +83,7 @@ def pthermal_photonadd(mean, photonadd, N):
     n = np.arange(N)
     P = mean ** (n - photonadd) / (1 + mean) ** (n + 1) * binom(n, photonadd)
     P[:photonadd] = 0
-    return P
+    return normalize(P)
 
 
 def phyper_poisson(lam, beta, N):
@@ -154,4 +156,4 @@ def psqueezed_vacuumM(r, theta, M, N):
 
 def pthermal_polarized(mean, dof, N):
     p = 1 - mean / (dof + mean)
-    return nbinom.pmf(np.arange(N), dof, p)
+    return normalize(nbinom.pmf(np.arange(N), dof, p))
