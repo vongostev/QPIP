@@ -55,7 +55,7 @@ def bvandermonde(nmax: int, max_order: int, *args):
 def convandermonde(nmax: int, max_order: int, qe: float, z: float, *args):
     k = np.arange(max_order).reshape((-1, 1))
     n = np.arange(nmax).reshape((1, -1))
-    return np.power(1 - qe + qe * z, n - k) * comb(n, k)
+    return np.power(1 - qe + qe * z, n - k, dtype=DPREC) * comb(n, k)
 
 
 # ================== MATRICES TO COMPUTE P MOMENTS =======================
@@ -70,7 +70,7 @@ def q2p_mrec_matrices(mmax: int, max_order: int, qe: float):
 def q2p_convmoms_matrix(mmax: int, max_order: int, qe: float, z: float):
     k = np.arange(max_order).reshape((-1, 1))
     B = convandermonde(mmax, max_order, 1., z)
-    return qe ** -k * B
+    return DPREC(qe) ** -k * B
 
 
 # ================= COMPUTE MOMENTS =======================
@@ -125,7 +125,8 @@ def mrec_maxent_pn(Q, qe: float, nmax: int = 0, max_order: int = 2):
 
 
 def rec_pn_generator(vandermonde_fun: object, moms_fun: object,
-                     Q: np.ndarray, nmax: int, max_order: int, args):
+                     Q: np.ndarray, nmax: int, max_order: int, args,
+                     normalized=False, g2_const=False):
     """
 
 
@@ -153,25 +154,29 @@ def rec_pn_generator(vandermonde_fun: object, moms_fun: object,
     mmax = len(Q)
     if nmax == 0:
         nmax = mmax
-    moms = moms_fun(Q, max_order, *args)
-    vandermonde_matrix = vandermonde_fun(nmax, max_order, *args)
+    moms = np.nan_to_num(moms_fun(Q, max_order, *args))
+    vandermonde_matrix = np.nan_to_num(vandermonde_fun(nmax, max_order, *args))
     vandermonde_matrix, moms = precond_moms(vandermonde_matrix, moms)
-    vandermonde_matrix, moms = norm_regularized(vandermonde_matrix, moms)
-    vandermonde_matrix, moms = g2_regularized(
-        vandermonde_matrix, moms, Q, *args)
-    res_nonnorm, resid, rank, s = lstsq(vandermonde_matrix, moms)
-    return normalize(res_nonnorm)
+    if normalized:
+        vandermonde_matrix, moms = norm_regularized(vandermonde_matrix, moms)
+    if g2_const:
+        vandermonde_matrix, moms = g2_regularized(
+            vandermonde_matrix, moms, Q, *args)
+    res, resid, rank, s = lstsq(vandermonde_matrix, moms)
+    return res
 
 
 def convmrec_pn(Q, qe: float, z: float, nmax: int = 0, max_order: int = 2):
-    return rec_pn_generator(convandermonde,
-                            convmoms, Q, nmax, max_order, (qe, z))
+    return rec_pn_generator(
+        convandermonde, convmoms, Q, nmax, max_order, (qe, z),
+        normalized=True, g2_const=True)
 
 
 def Q2PIM(Q, qe: float, nmax: int = 0, max_order: int = 2):
     # Reconstruct P from Q with initial moments
-    return rec_pn_generator(vandermonde,
-                            imoms, Q, nmax, max_order, (qe,))
+    return rec_pn_generator(
+        vandermonde, imoms, Q, nmax, max_order, (qe,),
+        normalized=True, g2_const=True)
 
 
 def Q2PBM(Q, qe: float, nmax: int = 0, max_order: int = 2):
@@ -179,7 +184,8 @@ def Q2PBM(Q, qe: float, nmax: int = 0, max_order: int = 2):
     return convmrec_pn(Q, qe, 1, nmax, max_order)
 
 
-def Q2PCM(Q, qe: float, nmax: int = 0, max_order: int = 2, zopt=None, zmax: float = 1) -> np.ndarray:
+def Q2PCM(Q, qe: float, nmax: int = 0, max_order: int = 2,
+          zopt=None, zmax: float = 1) -> np.ndarray:
     # Reconstruct P from Q with convergent moments
     if zopt is None:
         res = minimize_scalar(

@@ -4,47 +4,63 @@ Created on Sat Feb 20 13:47:27 2021
 
 @author: vonGostev
 
-Herzog, U. (1996). 
+Herzog, U. (1996).
 Loss-error compensation in quantum-state measurements and the solution of
-the time-reversed damping equation. 
+the time-reversed damping equation.
 Physical Review A, 53(3), 1245.
 """
-
+import numba as nb
 import numpy as np
-from fpdet import fact, lrange
 from joblib import Parallel, delayed
 
 
-def Cj(eta, n, j, K, L):
-    return (1 - 1 / (2 ** K * eta)) ** j * fact(n + j + sum(L)) / fact(j)
+@nb.njit(nogil=True, fastmath=True)
+def nbfact(n: int) -> int:
+    return np.prod(np.arange(1, n + 1, 1))
 
 
-@np.vectorize
-def Cl(eta, k, l):
-    return (- 2 ** (k + 1) * eta) ** (- l) / fact(l)
+@nb.njit(nogil=True, fastmath=True)
+def Cj(eta: float, n: int, j: int, K: int, L: int) -> float:
+    return (1 - 1 / (2 ** K * eta)) ** j * nbfact(n + j + np.sum(L)) / nbfact(j)
+
+
+@nb.njit(nogil=True, fastmath=True)
+def Cl(eta: float, k: int, lelem: int) -> float:
+    return (- 2 ** (k + 1) * eta) ** (- lelem) / nbfact(lelem)
+
+
+@nb.njit(nogil=True, fastmath=True)
+def get_pn_elems_nb(L: np.ndarray, llen: int, n: int, Q: np.ndarray,
+                    eta: float, K: int) -> float:
+    elems = np.zeros(llen)
+    for i in nb.prange(llen):
+        li = L[i]
+        ls, j = li[:-1], int(li[-1])
+
+        C1elems = np.zeros(K * K)
+        for l in nb.prange(K):
+            for k in nb.prange(K):
+                C1elems[l * K + k] = Cl(eta, k, ls[l])
+
+        C2 = Cj(eta, n, j, K, ls)
+        elems[i] = np.prod(C1elems) * C2 * Q[n + np.sum(li)]
+    return np.sum(elems)
 
 
 def get_pn(n, Q, eta, K):
-    L = np.array(np.meshgrid(*[lrange(Q)
-                               for i in range(K + 1)])).T.reshape(-1, K + 1)
-    L = list(filter(lambda x: np.sum(x) < len(Q) - n, L))
+    M = len(Q)
+    L = np.array(np.meshgrid(*[np.arange(M) for i in np.arange(K + 1)])).T
+    L = L.reshape(-1, K + 1)
+    L = L[np.sum(L, axis=1) < M - n]
 
-    def pmember(li):
-        ls, j = li[:-1], li[-1]
-        C1 = Cl(eta, lrange(ls), ls) if len(ls) else []
-        C2 = Cj(eta, n, j, K, ls)
-        return np.prod(C1) * C2 * Q[n + sum(li)]
+    llen = len(L)
+    esum = get_pn_elems_nb(L, llen, n, Q, eta, K)
 
-    return np.sum(np.apply_along_axis(pmember, 1, L)) / eta ** n / fact(n)
-
-
-def get_pn0(n, Q, eta, K):
-    coeffs = []
-    for j in range(len(Q) - n):
-        C2 = Cj(eta, n, j, K, [])
-        coeffs.append(C2)
-    return sum(coeffs[j] * Q[n + j] for j in range(len(Q) - n)) / eta ** n / fact(n)
+    return esum / eta ** n / nbfact(n)
 
 
 def Q2PGF(Q, eta, N, K=2):
-    return Parallel(n_jobs=-1)(delayed(get_pn)(n, Q, eta, K) for n in range(N))
+    if K < 3:
+        return [get_pn(n, Q, eta, K) for n in range(N)]
+    return Parallel(n_jobs=-2)(
+        [delayed(get_pn)(n, Q, eta, K) for n in np.arange(N)])
