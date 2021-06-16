@@ -16,23 +16,25 @@ from qutip.operators import displace, squeeze
 from fpdet import normalize
 
 
-def ppoisson(mean, N):
-    return normalize(poisson.pmf(np.arange(N), mean))
+def ppoisson(mean, N, norm=True):
+    P = poisson.pmf(np.arange(N), mean)
+    return normalize(P) if norm else P
 
 
-def pthermal(mean, N):
-    return pthermal_polarized(mean, 1, N)
+def pthermal(mean, N, norm=True):
+    P = pthermal_polarized(mean, 1, N)
+    return normalize(P) if norm else P
 
 
-def pfock(mean, N):
+def pfock(mean, N, norm=True):
     if np.floor(mean) != mean:
         raise ValueError(f'Fock state energy must be int, not {mean}')
     P = np.zeros(N)
     P[mean] = 1
-    return P
+    return normalize(P) if norm else P
 
 
-def pthermal_photonsub(mean, photonsub, N):
+def pthermal_photonsub(mean, photonsub, N, norm=True):
     """
     Barnett, Stephen M., et al. 
     "Statistics of photon-subtracted and photon-added states." 
@@ -56,10 +58,10 @@ def pthermal_photonsub(mean, photonsub, N):
     n = np.arange(N)
     P = mean ** n / (1 + mean) ** (n + photonsub + 1) * \
         binom(n + photonsub, photonsub)
-    return normalize(P)
+    return normalize(P) if norm else P
 
 
-def pthermal_photonadd(mean, photonadd, N):
+def pthermal_photonadd(mean, photonadd, N, norm=True):
     """
     Barnett, Stephen M., et al.
     "Statistics of photon-subtracted and photon-added states."
@@ -83,10 +85,10 @@ def pthermal_photonadd(mean, photonadd, N):
     n = np.arange(N)
     P = mean ** (n - photonadd) / (1 + mean) ** (n + 1) * binom(n, photonadd)
     P[:photonadd] = 0
-    return normalize(P)
+    return normalize(P) if norm else P
 
 
-def phyper_poisson(lam, beta, N):
+def phyper_poisson(lam, beta, N, norm=True):
     """
     Bardwell, G. E., & Crow, E. L. (1964).
     A two-parameter family of hyper-Poisson distributions.
@@ -119,18 +121,20 @@ def phyper_poisson(lam, beta, N):
 
     n = np.arange(N)
     phi = phi_function(beta, lam)
-    return Γ(beta) / Γ(beta + n) * lam ** n / phi
+    P = Γ(beta) / Γ(beta + n) * lam ** n / phi
+    return normalize(P) if norm else P
 
 
-def psqueezed_coherent1(ampl, sq_coeff, N):
+def psqueezed_coherent1(ampl, sq_coeff, N, norm=True):
     vac = basis(N, 0)
     d = displace(N, ampl)
     s = squeeze(N, sq_coeff)
     print('Squeeze', np.exp(- 2 * np.abs(sq_coeff)) / 4)
-    return (d * s * vac).unit()
+    P = d * s * vac
+    return normalize(P) if norm else P
 
 
-def psqueezed_vacuumM(r, theta, M, N):
+def psqueezed_vacuumM(r, theta, M, N, norm=True):
     """
     M-mode squeezed vacuum state
 
@@ -151,9 +155,11 @@ def psqueezed_vacuumM(r, theta, M, N):
     """
     n = np.arange(N)
     distribution = np.tanh(r) ** n / np.cosh(r) * (1 - n % 2)
-    return normalize(distribution ** 2)
+    P = distribution ** 2
+    return normalize(P) if norm else P
 
 
-def pthermal_polarized(mean, dof, N):
+def pthermal_polarized(mean, dof, N, norm=True):
     p = 1 - mean / (dof + mean)
-    return normalize(nbinom.pmf(np.arange(N), dof, p))
+    P = nbinom.pmf(np.arange(N), dof, p)
+    return normalize(P) if norm else P

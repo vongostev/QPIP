@@ -11,7 +11,7 @@ from fpdet import normalize
 
 
 # ========================= PHOTOCOUNTING STATISTICS ==========================
-def qthermal_unpolarized(mean, dof, N):
+def qthermal_unpolarized(mean, dof, N, norm=True):
     """
     Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0
 
@@ -37,11 +37,12 @@ def qthermal_unpolarized(mean, dof, N):
                       Γ(k + dof) / (Γ(k + 1) * Γ(dof)))
 
     m = np.arange(N)
-    return normalize(
-        fsum(m) * (1 + 2 * dof / mean) ** (- m) * (1 + mean / 2 / dof) ** (- 2 * dof))
+    P = fsum(m) * (1 + 2 * dof / mean) ** (- m) * \
+        (1 + mean / 2 / dof) ** (- 2 * dof)
+    return normalize(P) if norm else P
 
 
-def qthermal_polarized(mean, dof, N):
+def qthermal_polarized(mean, dof, N, norm=True):
     """
     Дж. Гудмен, Статистическая оптика, ф-ла 9.2.24 
 
@@ -61,5 +62,6 @@ def qthermal_polarized(mean, dof, N):
 
     """
     m = np.arange(N)
-    return normalize(
-        Γ(m + dof) / (Γ(m + 1) * Γ(dof)) * (1 + dof / mean) ** (- m) * (1 + mean / dof) ** (- dof))
+    P = Γ(m + dof) / (Γ(m + 1) * Γ(dof)) * (1 + dof /
+                                            mean) ** (- m) * (1 + mean / dof) ** (- dof)
+    return normalize(P) if norm else P
