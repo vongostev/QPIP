@@ -45,7 +45,6 @@ def bvandermonde(nmax: int, max_order: int, *args):
     Returns
     -------
     np.array((max_order, nmax))
-        DESCRIPTION.
 
     """
 

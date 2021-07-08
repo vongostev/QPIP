@@ -49,7 +49,7 @@ def get_pn_elems_nb(L: np.ndarray, llen: int, n: int, Q: np.ndarray,
 
 def get_pn(n, Q, eta, K):
     M = len(Q)
-    L = np.array(np.meshgrid(*[np.arange(M) for i in np.arange(K + 1)])).T
+    L = np.array(np.meshgrid(*[range(M)] * (K + 1))).T
     L = L.reshape(-1, K + 1)
     L = L[np.sum(L, axis=1) < M - n]
 

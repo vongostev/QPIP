@@ -7,6 +7,8 @@ Created on Fri Jun  7 22:17:25 2019
 import numpy as np
 from scipy.special import binom
 from scipy.special import gamma as Γ
+from scipy.special import beta
+
 
 from scipy.stats import poisson, nbinom
 
@@ -51,8 +53,7 @@ def pthermal_photonsub(mean, photonsub, N, norm=True):
 
     Returns
     -------
-    float
-        Probability for the given photon number.
+    The photon-number distribution
 
     """
     n = np.arange(N)
@@ -78,8 +79,7 @@ def pthermal_photonadd(mean, photonadd, N, norm=True):
 
     Returns
     -------
-    float
-        Probability for the given photon number.
+    The photon-number distribution
 
     """
     n = np.arange(N)
@@ -110,8 +110,7 @@ def phyper_poisson(lam, beta, N, norm=True):
 
     Returns
     -------
-    float
-        Probability for given m.
+    The photon-number distribution
 
     """
 
@@ -140,7 +139,7 @@ def psqueezed_vacuumM(r, theta, M, N, norm=True):
 
     Parameters
     ---------
-    mean : complex
+    r : complex
         Pump parameter [0, 1]
     phase : float
         relative phase shift of two modes one by one
@@ -162,4 +161,43 @@ def psqueezed_vacuumM(r, theta, M, N, norm=True):
 def pthermal_polarized(mean, dof, N, norm=True):
     p = 1 - mean / (dof + mean)
     P = nbinom.pmf(np.arange(N), dof, p)
+    return normalize(P) if norm else P
+
+
+def pcompound_poisson(mu: float, a: float, N: int, norm=True):
+    """
+    Bogdanov, Y. I., Bogdanova, N. A., Katamadze, K. G., Avosopyants,
+    G. V., & Lukichev, V. F. (2016).
+    Study of photon statistics using a compound Poisson distribution
+    and quadrature measurements.
+    Optoelectronics, Instrumentation and Data Processing, 52(5), 475-485.
+
+    Formula (10)
+
+    Parameters
+    ----------
+    mu : float
+        mean value.
+    a : float
+        a parameter.
+    N : int
+        maximal photon number.
+    norm : bool, optional
+        Flag to normalization. The default is True.
+
+    Returns
+    -------
+    The photon-number distribution
+
+    """
+    n = np.arange(N)
+    if a > 0:
+        P = (mu / a) ** n * Γ(a + n) / Γ(a) / \
+            Γ(n + 1) / (1 + mu / a) ** (n + a)
+    elif a < 0:
+        if int(a) == a and mu == -a:
+            P = pfock(-a, N)
+        else:
+            P = (mu / a) ** n / (beta(a - 1, n + 1) * a) / \
+                (1 + mu / a) ** (n + a)
     return normalize(P) if norm else P
