@@ -198,6 +198,6 @@ def pcompound_poisson(mu: float, a: float, N: int, norm=True):
         if int(a) == a and mu == -a:
             P = pfock(-a, N)
         else:
-            P = (mu / a) ** n / (beta(a - 1, n + 1) * a) / \
+            P = (mu / a) ** n / (beta(a - 1, n + 1) * (a - 1)) / \
                 (1 + mu / a) ** (n + a)
     return normalize(P) if norm else P
