@@ -133,24 +133,22 @@ def psqueezed_coherent1(ampl, sq_coeff, N, norm=True):
     return normalize(P) if norm else P
 
 
-def psqueezed_vacuumM(r, theta, M, N, norm=True):
+def psqueezed_vacuum(r, theta, N, norm=True):
     """
-    M-mode squeezed vacuum state
+    2-mode squeezed vacuum state
 
     Parameters
     ---------
     r : complex
         Pump parameter [0, 1]
-    phase : float
+    theta : float
         relative phase shift of two modes one by one
-    M : int
-        number of modes
     N : int
         maximal photon number.
 
     Returns
     -------
-        M-mode squeezed vacuum photon-number distribution
+        2-mode squeezed vacuum photon-number distribution
     """
     n = np.arange(N)
     distribution = np.tanh(r) ** n / np.cosh(r) * (1 - n % 2)
