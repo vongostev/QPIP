@@ -9,8 +9,9 @@ import numpy as np
 from scipy.special import gamma as Γ
 from fpdet import normalize
 
-
 # ========================= PHOTOCOUNTING STATISTICS ==========================
+
+
 def qthermal_unpolarized(mean, dof, N, norm=True):
     """
     Дж. Гудмен, Статистическая оптика, ф-ла 9.2.29 при P = 0
@@ -31,13 +32,13 @@ def qthermal_unpolarized(mean, dof, N, norm=True):
 
     """
     @np.vectorize
-    def fsum(_m):
+    def fsum(_m, dof):
         k = np.arange(_m + 1)
         return np.sum(Γ(_m - k + dof) / (Γ(_m - k + 1) * Γ(dof)) *
                       Γ(k + dof) / (Γ(k + 1) * Γ(dof)))
 
     m = np.arange(N)
-    P = fsum(m) * (1 + 2 * dof / mean) ** (- m) * \
+    P = fsum(m, dof) * (1 + 2 * dof / mean) ** (- m) * \
         (1 + mean / 2 / dof) ** (- 2 * dof)
     return normalize(P) if norm else P
 

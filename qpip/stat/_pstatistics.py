@@ -8,11 +8,12 @@ import numpy as np
 from scipy.special import binom
 from scipy.special import gamma as Γ
 from scipy.special import beta
+from mpmath import hermite
 
 
 from scipy.stats import poisson, nbinom
 
-from qutip import basis
+from qutip import basis, ket2dm
 from qutip.operators import displace, squeeze
 
 from fpdet import normalize
@@ -38,8 +39,8 @@ def pfock(mean, N, norm=True):
 
 def pthermal_photonsub(mean, photonsub, N, norm=True):
     """
-    Barnett, Stephen M., et al. 
-    "Statistics of photon-subtracted and photon-added states." 
+    Barnett, Stephen M., et al.
+    "Statistics of photon-subtracted and photon-added states."
     Physical Review A 98.1 (2018): 013809.
 
     Parameters
@@ -129,7 +130,9 @@ def psqueezed_coherent1(ampl, sq_coeff, N, norm=True):
     d = displace(N, ampl)
     s = squeeze(N, sq_coeff)
     print('Squeeze', np.exp(- 2 * np.abs(sq_coeff)) / 4)
-    P = d * s * vac
+    state = d * s * vac
+    rho = ket2dm(state)
+    P = rho.diag()
     return normalize(P) if norm else P
 
 
@@ -198,4 +201,41 @@ def pcompound_poisson(mu: float, a: float, N: int, norm=True):
         else:
             P = (mu / a) ** n / (beta(a - 1, n + 1) * (a - 1)) / \
                 (1 + mu / a) ** (n + a)
+    return normalize(P) if norm else P
+
+
+def psqueezed_displaced(x0: float, p0: float, u: float, N: int, norm=True):
+    """
+    Dutta B. et al.
+    Squeezed states, photon-number distributions, and U (1) invariance
+    JOSA B. – 1993. – Т. 10. – №. 2. – С. 253-264.
+
+    Parameters
+    ----------
+    x0 : float
+        DESCRIPTION.
+    p0 : float
+        DESCRIPTION.
+    u : float
+        DESCRIPTION.
+    N : int
+        DESCRIPTION.
+    norm : bool, optional
+        DESCRIPTION. The default is True.
+
+    Returns
+    -------
+    numpy.ndarray
+        The photon-number distribution.
+
+    """
+    assert (u > 0) and (u <= 1)
+    n = np.arange(N)
+    s1 = 1 / Γ(n + 1) / 2. ** (n - 1)
+    s2 = np.sqrt(u) * (1 - u) ** n / (1 + u) ** (n + 1)
+    ksi = (x0 + 1j * u * p0) / (1 - u ** 2) ** 0.5
+    s3 = np.exp(- u * (x0 ** 2 + p0 ** 2) + (1 - u ** 2) * np.abs(ksi) ** 2)
+
+    P = s1 * s2 * s3 * np.abs(np.vectorize(hermite)(n, ksi)) ** 2
+    P = P.astype(np.float64)
     return normalize(P) if norm else P
