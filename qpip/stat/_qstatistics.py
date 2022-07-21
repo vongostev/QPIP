@@ -6,7 +6,7 @@ Created on Thu Oct 22 21:59:54 2020
 @author: vong
 """
 import numpy as np
-from scipy.special import gamma as Γ
+from scipy.special import binom
 from fpdet import normalize
 
 # ========================= PHOTOCOUNTING STATISTICS ==========================
@@ -34,8 +34,7 @@ def qthermal_unpolarized(mean, dof, N, norm=True):
     @np.vectorize
     def fsum(_m, dof):
         k = np.arange(_m + 1)
-        return np.sum(Γ(_m - k + dof) / (Γ(_m - k + 1) * Γ(dof)) *
-                      Γ(k + dof) / (Γ(k + 1) * Γ(dof)))
+        return np.sum(binom(_m + dof - 1 - k, _m - k) * binom(k + dof - 1, k))
 
     m = np.arange(N)
     P = fsum(m, dof) * (1 + 2 * dof / mean) ** (- m) * \
@@ -63,6 +62,5 @@ def qthermal_polarized(mean, dof, N, norm=True):
 
     """
     m = np.arange(N)
-    P = Γ(m + dof) / (Γ(m + 1) * Γ(dof)) * (1 + dof /
-                                            mean) ** (- m) * (1 + mean / dof) ** (- dof)
+    P = binom(m + dof - 1, m) * (1 + dof / mean) ** (- m) * (1 + mean / dof) ** (- dof)
     return normalize(P) if norm else P
